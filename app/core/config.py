@@ -5,6 +5,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings(BaseSettings):
-    GroqAPIKey: str
+    OPENAI_API_KEY = str
 
 settings = Settings()    
