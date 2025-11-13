@@ -1,15 +1,14 @@
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
-from app.core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import Request
-from app.services.sight_word_practise.sight_word_practise_route import router as sight_word_router
+from app.services.Writing.writing_route import router as writing_router
 
 app = FastAPI(
-    title="World checker",
-    description="An API to check if a word exists in the English dictionary.",
+    title="Writing AI API",
+    description="An API for AI-powered writing assistance with topic generation and scoring.",
     docs_url="/docs",
 )
 
@@ -23,7 +22,7 @@ app.add_middleware(
 
 
 
-app.include_router(sight_word_router, tags=["sight-word-practise"])
+app.include_router(writing_router, prefix="/writing", tags=["writing"])
 
 
 if __name__ == "__main__":
