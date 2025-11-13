@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header,UploadFile, File
 from .precision_drill import PrecisionDrill
 from .precision_drill_schema import PrecisionDrillRequest, PrecisionDrillResponse
+from app.utils.verify_auth import verify_token
 
 router = APIRouter()
 precision_drill= PrecisionDrill()     
