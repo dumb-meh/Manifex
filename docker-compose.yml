@@ -1,5 +1,5 @@
 services:
-  sight-word-api:
+  manifex-ai:
     build: .
     ports:
       - "8000:8000"
