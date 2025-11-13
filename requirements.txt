@@ -6,5 +6,7 @@ python-dotenv
 httpx
 transformers
 torch
+openai-whisper
+openai
 accelerate
 sentencepiece
