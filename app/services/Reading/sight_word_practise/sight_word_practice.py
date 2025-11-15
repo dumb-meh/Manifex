@@ -10,21 +10,25 @@ class SightWordPractice:
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
-        # Common sight words organized by grade level
-        self.sight_words_by_grade = {
-            "1": [
+        # Common sight words organized by age
+        self.sight_words_by_age = {
+            "5": [
+                "the", "and", "a", "to", "in", "is", "you", "that", "it", "he",
+                "I", "at", "be", "this", "have", "from", "or", "one", "we", "can"
+            ],
+            "6": [
                 "the", "and", "a", "to", "in", "is", "you", "that", "it", "he",
                 "was", "for", "on", "are", "as", "with", "his", "they", "I", "at",
                 "be", "this", "have", "from", "or", "one", "had", "by", "but", "not",
                 "what", "all", "were", "we", "when", "your", "can", "said", "there", "use"
             ],
-            "2": [
+            "7": [
                 "each", "which", "she", "do", "how", "their", "if", "will", "up", "other",
                 "about", "out", "many", "then", "them", "these", "so", "some", "her", "would",
                 "make", "like", "him", "into", "time", "has", "look", "two", "more", "write",
                 "go", "see", "number", "no", "way", "could", "people", "my", "than", "first"
             ],
-            "3": [
+            "8": [
                 "water", "been", "call", "who", "oil", "its", "now", "find", "long", "down",
                 "day", "did", "get", "come", "made", "may", "part", "over", "new", "sound",
                 "take", "only", "little", "work", "know", "place", "year", "live", "me", "back",
@@ -35,43 +39,64 @@ class SightWordPractice:
     def generate_sentence(self, request: SightWordRequest) -> SightWordResponse:
         """Generate a sentence containing specified sight words"""
         
-        # Validate and get grade level
-        grade_level = str(request.grade_level) if request.grade_level else "1"
-        if grade_level not in self.sight_words_by_grade:
-            grade_level = "1"
+        # Validate and get age
+        age = str(request.age) if request.age else "6"
+        if age not in self.sight_words_by_age:
+            # Default to closest age if not exact match
+            try:
+                age_int = int(age)
+                if age_int < 6:
+                    age = "5"
+                elif age_int > 8:
+                    age = "8"
+                else:
+                    age = "6"
+            except:
+                age = "6"
         
-        # Get number of words to include
-        num_words = min(max(request.num_words, 2), 5) if request.num_words else 3
+        # Always use 3 sight words
+        num_words = 3
         
-        # Randomly select sight words from the grade level
-        available_words = self.sight_words_by_grade[grade_level]
+        # Randomly select sight words from the age group
+        available_words = self.sight_words_by_age[age]
         selected_words = random.sample(available_words, min(num_words, len(available_words)))
         
         # Generate sentence using OpenAI
-        sentence = self._generate_sentence_with_ai(selected_words, grade_level)
+        sentence = self._generate_sentence_with_ai(selected_words, age)
         
         return SightWordResponse(
             sentence=sentence,
             sight_words=selected_words,
-            grade_level=grade_level
+            age=age
         )
     
-    def _generate_sentence_with_ai(self, sight_words: list, grade_level: str) -> str:
+    def _generate_sentence_with_ai(self, sight_words: list, age: str) -> str:
         """Use OpenAI to generate a natural sentence containing the sight words"""
         
         words_list = ", ".join(sight_words)
         
-        prompt = f"""You are a helpful teacher creating practice sentences for grade {grade_level} students.
+        # Age-appropriate complexity levels
+        age_guidance = {
+            "5": "very simple sentences with basic vocabulary for 5-year-olds (kindergarten level)",
+            "6": "simple sentences with easy vocabulary for 6-year-olds (1st grade level)",
+            "7": "moderately simple sentences with broader vocabulary for 7-year-olds (2nd grade level)",
+            "8": "slightly more complex sentences with richer vocabulary for 8-year-olds (3rd grade level)"
+        }
+        
+        complexity = age_guidance.get(age, age_guidance["6"])
+        
+        prompt = f"""You are a helpful teacher creating practice sentences for {age}-year-old children.
 
 Create a simple, natural, and age-appropriate sentence that includes ALL of these sight words: {words_list}
 
 Requirements:
 - The sentence MUST use ALL the provided words: {words_list}
-- Make it simple and appropriate for grade {grade_level} students
+- Make it {complexity}
 - The sentence should be natural and make sense
 - Use correct grammar and punctuation
 - Keep it between 8-15 words long
-- Make it engaging and fun for kids
+- Make it engaging and fun for {age}-year-old kids
+- Use topics and themes that {age}-year-olds can relate to
 
 Return ONLY the sentence, nothing else."""
 
