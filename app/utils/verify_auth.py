@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import os
 import httpx
-from typing import bool
 
 load_dotenv()
 backend_url = os.getenv("BACKEND_URL")
