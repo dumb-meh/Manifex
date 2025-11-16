@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header,UploadFile, File
-from .precision_drill import PrecisionDrill
-from .precision_drill_schema import PrecisionDrillRequest, PrecisionDrillResponse
+from .power_words import PowerWords
+from .power_words_schema import PowerWordsRequest, PowerWordsResponse
+from app.utils.verify_auth import verify_token
 
 router = APIRouter()
 power_words= PowerWords()     
