@@ -48,7 +48,7 @@ class Writing:
     
     def get_writing_score(self, input_data: FinalScoreRequest) -> FinalScoreResponse:
         # Analyze word usage
-        words_used = self._check_word_usage(input_data.user_paragraph, input_data.provided_words)
+        words_used = self._check_word_usage(input_data.user_paragraph, input_data.related_words)
         word_usage_score = min(len(words_used) * 2, 10)  # 2 points per word used, max 10
         
         # Get grammar and sentence quality score from AI
@@ -61,7 +61,7 @@ class Writing:
         motivation = self._get_motivation_message(
             input_data.user_paragraph, 
             input_data.topic, 
-            input_data.provided_words,
+            input_data.related_words,
             words_used, 
             sentence_score
         )
@@ -71,12 +71,12 @@ class Writing:
             motivation=motivation
         )
     
-    def _check_word_usage(self, paragraph: str, provided_words: list) -> list:
-        """Check which provided words are used in the paragraph"""
+    def _check_word_usage(self, paragraph: str, related_words: list) -> list:
+        """Check which related words are used in the paragraph"""
         words_used = []
         paragraph_lower = paragraph.lower()
         
-        for word in provided_words:
+        for word in related_words:
             # Check for exact word match (case-insensitive)
             word_pattern = r'\b' + re.escape(word.lower()) + r'\b'
             if re.search(word_pattern, paragraph_lower):
@@ -108,12 +108,12 @@ Return ONLY a number from 0 to 10. Nothing else."""
         except:
             return 5  # Default score on error
     
-    def _get_motivation_message(self, paragraph: str, topic: str, provided_words: list, 
+    def _get_motivation_message(self, paragraph: str, topic: str, related_words: list, 
                                words_used: list, sentence_score: int) -> str:
         """Get encouraging motivation message from AI"""
         
         words_used_count = len(words_used)
-        total_words = len(provided_words)
+        total_words = len(related_words)
         
         motivation_prompt = f"""Create a very short, encouraging motivational message for a student who wrote about {topic}.
 
