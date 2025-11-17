@@ -30,6 +30,6 @@ app.include_router(reading_comprehension_router, prefix="/reading_comprehension"
 app.include_router(phoneme_flashcards_router, prefix="/phoneme_flashcards", tags=["phoneme_flashcards"])
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8061)
 
 

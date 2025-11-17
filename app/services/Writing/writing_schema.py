@@ -27,7 +27,7 @@ class InitialTopicResponse(BaseModel):
 
 class FinalScoreRequest(BaseModel):
     topic: str
-    provided_words: List[str]
+    related_words: List[str]
     user_paragraph: str
 
 class FinalScoreResponse(BaseModel):
