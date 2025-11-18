@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from fastapi import Header
 
+
+class PrecisionDrillRequest(BaseModel):
+    wordlist: List[str]
 class PrecisionDrillResponse(BaseModel):
     score:str
     feedback:str

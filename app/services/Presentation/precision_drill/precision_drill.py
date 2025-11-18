@@ -15,8 +15,11 @@ class PrecisionDrill:
         response = self.get_openai_response(prompt)
         return self.format_response(response)
     
-    def create_prompt(self, input: PrecisionDrillRequest) -> str:
-        prompt = """a"""
+    def create_prompt(self, input: PrecisionDrillRequest, transcript: str) -> str:
+        prompt = f"""You will recieve a word list and a voice transcript of user saying those words for a precision drill. Evaluate the user's performance based on clarity, speed, and accuracy in pronouncing the words. Provide a score out of 10, constructive feedback, and suggestions for improvement in JSON format.
+        You will get the following by:
+        Word List: {input.wordlist}
+        User Transcript: {transcript}"""
         
         return prompt
     
@@ -37,4 +40,14 @@ class PrecisionDrill:
         except Exception as e:
             print(f"Error creating PrecisionDrillResponse: {e}")
             return PrecisionDrillResponse()
-        
+    def get_precision_drill(self) -> list:
+        prompt=f"""Generate a timed articulation drill with 40 words that challenge clarity and speed for adult presenters. Words should include a mix of abstract nouns, action verbs, and tone-related adjectives. Increase difficulty gradually and ensure a new set of words daily. Provide pacing intervals (slow, medium, fast)
+        Response in JSON format as:
+        {{
+            "slow": [perception, integrity, articulate, emphasize, collaborate, innovate, resonate, dynamic, empathy, clarity],
+            "medium": [synergy, paradigm, leverage, holistic, proactive, transformative, agile, scalable, disruptive, visionary],
+            "fast": [ubiquitous, quintessential, conundrum, serendipity, dichotomy, ubiquitous, quintessential, conundrum, serendipity, dichotomy]    ...
+            
+        }}"""
+        response = self.get_openai_response(prompt)
+        return response
