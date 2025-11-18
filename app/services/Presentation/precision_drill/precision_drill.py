@@ -10,7 +10,7 @@ class PrecisionDrill:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
         
-    def generate_precision_drill(self, input: PrecisionDrillRequest) -> PrecisionDrillResponse:
+    def precision_drill(self, input: PrecisionDrillRequest) -> PrecisionDrillResponse:
         prompt = self.create_prompt(input)
         response = self.get_openai_response(prompt)
         return self.format_response(response)

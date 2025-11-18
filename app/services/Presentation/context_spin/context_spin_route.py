@@ -17,3 +17,15 @@ async def  get_context_spin(file:UploadFile = File(...),authtoken: str = Header(
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/context_spin", response_model=ContextSpinResponse)
+async def  get_context_spin(file:UploadFile = File(...),authtoken: str = Header(...)):
+    try:
+        authtoken=verify_token(authtoken)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid auth token")
+    try:
+        response = context_spin.generate_context_spin(file)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
