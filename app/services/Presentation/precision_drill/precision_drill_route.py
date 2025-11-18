@@ -13,6 +13,18 @@ async def  get_precision_drill(file:UploadFile = File(...),authtoken: str = Head
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid auth token")
     try:
+        response = precision_drill.precision_drill_score()
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/get_precision_drill", response_model=PrecisionDrillResponse)
+async def  get_precision_drill(file:UploadFile = File(...),authtoken: str = Header(...)):
+    try:
+        authtoken=verify_token(authtoken)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid auth token")
+    try:
         response = precision_drill.generate_precision_drill()
         return response
     except Exception as e:
