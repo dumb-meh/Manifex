@@ -10,5 +10,5 @@ class ReadingComprehensionResponse(BaseModel):
     passage_name: str
     text: str
     questions: List[QuestionAnswer]
-    age: str
+    age: str #### No need for age in response . Instead it is only necessary in input
     image: str = ""  # Optional image URL
