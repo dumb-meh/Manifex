@@ -4,7 +4,7 @@ from .context_spin import ContextSpinRequest, ContextSpinResponse
 from app.utils.verify_auth import verify_token
 
 router = APIRouter()
-context_spin= ContextSpin()     
+context_spin= ContextSpin()   
 
 @router.post("/context_spin", response_model=ContextSpinResponse)
 async def  get_context_spin(file:UploadFile = File(...),authtoken: str = Header(...)):
