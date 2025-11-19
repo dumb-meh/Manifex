@@ -23,10 +23,11 @@ class Writing:
             selected_topic = topic_request.topic.value
         else:
             selected_topic = random.choice(self.available_topics)
+            selected_age = topic_request.age if topic_request and topic_request.age else "all ages"
         
         # Create prompt to get 5 related words for the selected topic
         prompt = f"""You are a helpful assistant that provides exactly 5 related words for a given topic. 
-        Provide exactly 5 words related to the topic '{selected_topic}'. 
+        Provide exactly 5 words related to the topic '{selected_topic}' for age: {selected_age}. 
         Return only the 5 words separated by commas, nothing else.
         The words should be simple and commonly used words related to the topic."""
         
