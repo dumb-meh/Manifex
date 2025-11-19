@@ -19,7 +19,16 @@ class PrecisionDrill:
         prompt = f"""You will recieve a word list and a voice transcript of user saying those words for a precision drill. Evaluate the user's performance based on clarity, speed, and accuracy in pronouncing the words. Provide a score out of 10, constructive feedback, and suggestions for improvement in JSON format.
         You will get the following by:
         Word List: {input.wordlist}
-        User Transcript: {transcript}"""
+        User Transcript: {transcript}
+        Now, analyze the user's performance and provide the evaluation in the following JSON format:
+        {{
+            "score": 8,
+            "feedback": "Good clarity but needs to improve speed on certain words.", "Practice tongue twisters to enhance articulation.",
+                "Focus on pacing to maintain consistent speed."
+            "status": "success",
+            "message": "Evaluation completed successfully."
+
+        }}"""
         
         return prompt
     
