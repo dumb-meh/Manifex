@@ -19,6 +19,8 @@ class ContextSpin:
         prompt = f"""
         You are an expert presentation coach. Evaluate the following text based on its context relevance and vocabulary integration.
         you will recive the following by:
+        scenario: {input.scenario}
+        user transcript: {transcript}
         score each aspect on a scale of 1-10 and provide constructive feedback and suggestions for improvement
         The json response must be exactly in this format
         {{
