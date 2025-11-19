@@ -19,6 +19,7 @@ class TopicEnum(str, Enum):
 
 class TopicRequest(BaseModel):
     topic: Optional[TopicEnum] = None  # If None, a random topic will be selected
+    age:str
 
 class InitialTopicResponse(BaseModel):
     topic: str
