@@ -10,14 +10,28 @@ class ContextSpin:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
         
-    def generate_context_spin(self, input: ContextSpinRequest) -> ContextSpinResponse:
-        prompt = self.create_prompt(input)
+    def context_spin_score(self,input:ContextSpinRequest, transcript) -> ContextSpinResponse:
+        prompt = self.create_prompt(input,transcript)
         response = self.get_openai_response(prompt)
         return self.format_response(response)
     
-    def create_prompt(self, input: ContextSpinRequest) -> str:
-        prompt = """a"""
+    def create_prompt(self, input:ContextSpinRequest, transcript) -> str:
+        prompt = f"""
+        You are an expert presentation coach. Evaluate the following text based on its context relevance and vocabulary integration.
+        you will recive the following by:
+        scenario: {input.scenario}
+        user transcript: {transcript}
+        score each aspect on a scale of 1-10 and provide constructive feedback and suggestions for improvement
+        The json response must be exactly in this format
+        {{
+            "score": 8,
+            "feedback": ""
+            "status": "success",
+            "message": "Evaluation completed successfully."
+
+        }}
         
+        """  
         return prompt
     
     def get_openai_response(self, prompt: str) -> str:
@@ -38,3 +52,12 @@ class ContextSpin:
             print(f"Error creating ContextSpinResponse: {e}")
             return ContextSpinResponse()
         
+    def context_spin_score(self) -> list:
+        prompt = f"""You are expert presentation coach. In order to improve spontaneous verbal thinking and vocabulary integration. Give 5 key vocabulary words and 5 random scenarios (e.g., “at a press conference,” “during a TED talk,” “motivating your team”)
+        return a json in the following format:
+        {{
+            "words": [word1, word2, word3, word4, word5],
+            "scenario": secnario
+        }}"""
+        response = self.get_openai_response(prompt)
+        return self.format_response(response)
