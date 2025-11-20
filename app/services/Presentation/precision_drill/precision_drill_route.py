@@ -8,7 +8,7 @@ router = APIRouter()
 precision_drill= PrecisionDrill()     
 
 @router.post("/precision_drill", response_model=PrecisionDrillResponse)
-async def  get_precision_drill(request:PrecisionDrillRequest,file:UploadFile = File(...),authtoken: str = Header(...)):
+async def  precision_drill_score(request:PrecisionDrillRequest,file:UploadFile = File(...),authtoken: str = Header(...)):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:
@@ -20,8 +20,8 @@ async def  get_precision_drill(request:PrecisionDrillRequest,file:UploadFile = F
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("/get_precision_drill", response_model=PrecisionDrillResponse)
-async def  get_precision_drill(file:UploadFile = File(...),authtoken: str = Header(...)):
+@router.get("/get_precision_drill")
+async def  get_precision_drill(authtoken: str = Header(...)):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:

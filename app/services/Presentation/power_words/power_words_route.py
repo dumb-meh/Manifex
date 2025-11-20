@@ -7,7 +7,7 @@ router = APIRouter()
 power_words= PowerWords()     
 
 @router.post("/power_words", response_model=PowerWordsResponse)
-async def  get_power_words(request: PowerWordsRequest, defintion_file:UploadFile = File(...),sentence_file:UploadFile = File(...),authtoken: str = Header(...)):
+async def  power_words_score (request: PowerWordsRequest, defintion_file:UploadFile = File(...),sentence_file:UploadFile = File(...),authtoken: str = Header(...)):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:
@@ -21,7 +21,7 @@ async def  get_power_words(request: PowerWordsRequest, defintion_file:UploadFile
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/get_power_words", response_model=PowerWordsResponse)
+@router.get("/get_power_words")
 async def  generate_power_words(authtoken: str = Header(...)):
     try:
         authtoken=verify_token(authtoken)

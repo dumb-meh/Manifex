@@ -63,6 +63,16 @@ class PowerWords:
     def generate_power_words(self) -> list:
         themes = ["Motivation", "Leadership", "Innovation", "Teamwork", "Success", "Creativity", "Growth", "Inspiration", "Change", "Resilience"]
         theme_of_the_day=random.choice(themes)
-        prompt=f"“Generate a list of 10 high-impact, industry-neutral power words used frequently by presenters, educators, leaders, and broadcasters. Include short definitions and 1 example sentence for each. Change all words daily and vary by theme ({theme_of_the_day})"
-        response= self.get_openai_response(prompt)
-        return response
+        prompt=f"""Generate a list of 10 high-impact, industry-neutral power words used frequently by presenters, educators, leaders, and broadcasters. Focus on the theme: {theme_of_the_day}
+        
+        Return ONLY a JSON object in this exact format:
+        {{"words": ["word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10"]}}
+        
+        Do not include definitions or example sentences. Only return the word strings in the array."""
+        response = self.get_openai_response(prompt)
+        try:
+            parsed_response = json.loads(response)
+            return parsed_response.get("words", [])
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON response: {e}")
+            return []
