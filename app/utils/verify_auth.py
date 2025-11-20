@@ -28,7 +28,7 @@ def verify_token(token: str) -> bool:
 
         if response.status_code == 200:
             result = response.json()
-            return bool(result.get("valid", False))
+            return bool(result.get("success", False))
         else:
             return False
                    
