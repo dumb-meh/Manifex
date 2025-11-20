@@ -6,7 +6,7 @@ class ContextSpinRequest(BaseModel):
     words: list[str]
 
 class ContextSpinResponse(BaseModel):
-    score:str
+    score:int
     feedback:str
     status:str
     message:str
