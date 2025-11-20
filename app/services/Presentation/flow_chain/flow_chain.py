@@ -11,7 +11,7 @@ class FlowChain:
         self.client = OpenAI(api_key=api_key)
         
     def flow_chain_score(self, input: FlowChainRequest,transcript) -> FlowChainResponse:
-        prompt = self.create_prompt(input)
+        prompt = self.create_prompt(input,transcript)
         response = self.get_openai_response(prompt)
         return self.format_response(response)
     
@@ -40,23 +40,30 @@ class FlowChain:
         )
         return response.choices[0].message.content
     
-    def format_response(self, response: str) -> FlowChainRequest:
+    def format_response(self, response: str) -> FlowChainResponse:
         try:
             parsed_data = json.loads(response)
             return FlowChainResponse(**parsed_data)
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
-            return FlowChainRequest()
+            return FlowChainResponse()
         except Exception as e:
             print(f"Error creating FlowChainResponse: {e}")
             return FlowChainResponse()
     
     def generate_flow_chain(self) -> list:
         prompt = f"""Create 10 connected words (e.g., vision → action → growth → impact → legacy) to enhance fluency and neural speed by chaining related vocabulary into cohesive micro-speeches.
-         return a json in the following format:
+        
+        Return ONLY a JSON object in this exact format:
         {{
-            "words": [word1, word2, word3, word4, word5, word6, word7, word8, word9, word10]
+            "words": ["word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10"]
         }}
-        """
+        
+        Do not include any additional text or formatting."""
         response = self.get_openai_response(prompt)
-        return self.format_response(response)
+        try:
+            parsed_response = json.loads(response)
+            return parsed_response.get("words", [])
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON response: {e}")
+            return []

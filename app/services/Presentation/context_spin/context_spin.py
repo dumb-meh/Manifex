@@ -52,12 +52,20 @@ class ContextSpin:
             print(f"Error creating ContextSpinResponse: {e}")
             return ContextSpinResponse()
         
-    def context_spin_score(self) -> list:
-        prompt = f"""You are expert presentation coach. In order to improve spontaneous verbal thinking and vocabulary integration. Give 5 key vocabulary words and 5 random scenarios (e.g., “at a press conference,” “during a TED talk,” “motivating your team”)
-        return a json in the following format:
+    def generate_context_spin(self) -> dict:
+        prompt = f"""You are expert presentation coach. In order to improve spontaneous verbal thinking and vocabulary integration. Give 5 key vocabulary words and 5 random scenarios (e.g., "at a press conference," "during a TED talk," "motivating your team")
+        
+        Return ONLY a JSON object in this exact format:
         {{
-            "words": [word1, word2, word3, word4, word5],
-            "scenario": secnario
-        }}"""
+            "words": ["word1", "word2", "word3", "word4", "word5"],
+            "scenario": "suppose you are speaking at a wedding reception"
+        }}
+        
+        Do not include any additional text or formatting."""
         response = self.get_openai_response(prompt)
-        return self.format_response(response)
+        try:
+            parsed_response = json.loads(response)
+            return parsed_response
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON response: {e}")
+            return {"words": [], "scenarios": []}

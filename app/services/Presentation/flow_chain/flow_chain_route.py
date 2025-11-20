@@ -14,19 +14,19 @@ async def  flow_chain_score(request:FlowChainRequest ,file:UploadFile = File(...
         raise HTTPException(status_code=401, detail="Invalid auth token")
     try:
         transcript = await convert_audio_to_text(file)
-        response = flow_chain.flow_chain_score(request, transcript)
+        response = flow_chain.flow_chain_score(request, transcript['text'])
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.post("/get_flow_chain")
-async def  generate_flow_chain(file:UploadFile = File(...),authtoken: str = Header(...)):
+@router.get("/get_flow_chain")
+async def  generate_flow_chain(authtoken: str = Header(...)):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid auth token")
     try:
-        response = flow_chain.generate_flow_chain(file)
+        response = flow_chain.generate_flow_chain()
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

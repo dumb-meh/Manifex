@@ -10,8 +10,8 @@ class PrecisionDrill:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
         
-    def precision_drill(self, input: PrecisionDrillRequest) -> PrecisionDrillResponse:
-        prompt = self.create_prompt(input)
+    def precision_drill_score(self, input: PrecisionDrillRequest, transcript: str) -> PrecisionDrillResponse:
+        prompt = self.create_prompt(input, transcript)
         response = self.get_openai_response(prompt)
         return self.format_response(response)
     
@@ -49,14 +49,22 @@ class PrecisionDrill:
         except Exception as e:
             print(f"Error creating PrecisionDrillResponse: {e}")
             return PrecisionDrillResponse()
-    def get_precision_drill(self) -> list:
+        
+    def generate_precision_drill(self) -> dict:
         prompt=f"""Generate a timed articulation drill with 40 words that challenge clarity and speed for adult presenters. Words should include a mix of abstract nouns, action verbs, and tone-related adjectives. Increase difficulty gradually and ensure a new set of words daily. Provide pacing intervals (slow, medium, fast)
-        Response in JSON format as:
+        
+        Return ONLY a JSON object in this exact format:
         {{
-            "slow": [perception, integrity, articulate, emphasize, collaborate, innovate, resonate, dynamic, empathy, clarity],
-            "medium": [synergy, paradigm, leverage, holistic, proactive, transformative, agile, scalable, disruptive, visionary],
-            "fast": [ubiquitous, quintessential, conundrum, serendipity, dichotomy, ubiquitous, quintessential, conundrum, serendipity, dichotomy]    ...
-            
-        }}"""
+            "slow": ["perception", "integrity", "articulate", "emphasize", "collaborate", "innovate", "resonate", "dynamic", "empathy", "clarity"],
+            "medium": ["synergy", "paradigm", "leverage", "holistic", "proactive", "transformative", "agile", "scalable", "disruptive", "visionary"],
+            "fast": ["ubiquitous", "quintessential", "conundrum", "serendipity", "dichotomy", "magnificent", "articulation", "pronunciation", "enunciation", "eloquence"]
+        }}
+        
+        Do not include any additional text or formatting."""
         response = self.get_openai_response(prompt)
-        return response
+        try:
+            parsed_response = json.loads(response)
+            return parsed_response
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON response: {e}")
+            return {"slow": [], "medium": [], "fast": []}
