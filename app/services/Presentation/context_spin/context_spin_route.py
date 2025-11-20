@@ -1,18 +1,35 @@
-from fastapi import APIRouter, HTTPException, Header,UploadFile, File
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from .context_spin import ContextSpin
-from .context_spin import ContextSpinRequest, ContextSpinResponse
+from .context_spin_schema import ContextSpinRequest, ContextSpinResponse
 from app.utils.verify_auth import verify_token
 from app.utils.speech_to_text import convert_audio_to_text
+import json
 router = APIRouter()
 context_spin= ContextSpin()   
 
 @router.post("/context_spin", response_model=ContextSpinResponse)
-async def  context_spin_score(request:ContextSpinRequest,file:UploadFile = File(...),authtoken: str = Header(...)):
+async def  context_spin_score(
+    scenario: str = Form(...),
+    words: str = Form(...),  # JSON string for list
+    file: UploadFile = File(...),
+    authtoken: str = Header(...)
+):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid auth token")
     try:
+        # Parse JSON string to list
+        try:
+            words_list = json.loads(words)
+            if not isinstance(words_list, list):
+                raise ValueError("Words must be a list")
+        except (json.JSONDecodeError, ValueError) as e:
+            raise HTTPException(status_code=400, detail=f"Invalid words format: {str(e)}")
+        
+        # Create request object
+        request = ContextSpinRequest(scenario=scenario, words=words_list)
+        
         transcript = await convert_audio_to_text(file)
         response = context_spin.context_spin_score(request,transcript['text'])
         return response
