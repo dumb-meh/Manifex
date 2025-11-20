@@ -5,7 +5,7 @@ from typing import List, Optional
 class PrecisionDrillRequest(BaseModel):
     wordlist: List[str]
 class PrecisionDrillResponse(BaseModel):
-    score:str
+    score:int
     feedback:str
     status:str
     message:str

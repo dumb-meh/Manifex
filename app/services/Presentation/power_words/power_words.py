@@ -33,7 +33,7 @@ class PowerWords:
 
     Respond in the following JSON format:
     {{
-        "score": "X/10",
+        "score": 5,
         "feedback": "Constructive feedback and suggestions for improvement",
         "status": "success",
         "message": "Brief summary of the evaluation"

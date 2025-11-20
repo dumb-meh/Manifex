@@ -18,13 +18,20 @@ async def  flow_chain_score(
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid auth token")
     try:
-        # Parse JSON string to list
+        # Parse word_list - support both JSON array and comma-separated formats
         try:
+            # First try JSON parsing
             word_list_parsed = json.loads(word_list)
             if not isinstance(word_list_parsed, list):
                 raise ValueError("Word list must be a list")
-        except (json.JSONDecodeError, ValueError) as e:
-            raise HTTPException(status_code=400, detail=f"Invalid word_list format: {str(e)}")
+        except (json.JSONDecodeError, ValueError):
+            # Fall back to comma-separated parsing
+            try:
+                word_list_parsed = [word.strip() for word in word_list.split(',') if word.strip()]
+                if not word_list_parsed:
+                    raise ValueError("Word list cannot be empty")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid word_list format. Use JSON array like [\"word1\",\"word2\"] or comma-separated like \"word1,word2\": {str(e)}")
         
         # Create request object
         request = FlowChainRequest(word_list=word_list_parsed)

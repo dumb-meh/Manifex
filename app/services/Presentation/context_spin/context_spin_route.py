@@ -19,13 +19,20 @@ async def  context_spin_score(
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid auth token")
     try:
-        # Parse JSON string to list
+        # Parse words - support both JSON array and comma-separated formats
         try:
+            # First try JSON parsing
             words_list = json.loads(words)
             if not isinstance(words_list, list):
                 raise ValueError("Words must be a list")
-        except (json.JSONDecodeError, ValueError) as e:
-            raise HTTPException(status_code=400, detail=f"Invalid words format: {str(e)}")
+        except (json.JSONDecodeError, ValueError):
+            # Fall back to comma-separated parsing
+            try:
+                words_list = [word.strip() for word in words.split(',') if word.strip()]
+                if not words_list:
+                    raise ValueError("Words list cannot be empty")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid words format. Use JSON array like [\"word1\",\"word2\"] or comma-separated like \"word1,word2\": {str(e)}")
         
         # Create request object
         request = ContextSpinRequest(scenario=scenario, words=words_list)
