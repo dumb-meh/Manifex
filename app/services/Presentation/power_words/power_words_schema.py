@@ -4,7 +4,7 @@ class PowerWordsRequest(BaseModel):
     word:str
 
 class PowerWordsResponse(BaseModel):
-    score:str
+    score:int
     feedback:str
     status:str
     message:str

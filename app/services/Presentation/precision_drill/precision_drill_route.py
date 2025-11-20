@@ -19,13 +19,20 @@ async def  precision_drill_score(
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid auth token")
     try:
-        # Parse JSON string to list
+        # Parse wordlist - support both JSON array and comma-separated formats
         try:
+            # First try JSON parsing
             wordlist_parsed = json.loads(wordlist)
             if not isinstance(wordlist_parsed, list):
                 raise ValueError("Wordlist must be a list")
-        except (json.JSONDecodeError, ValueError) as e:
-            raise HTTPException(status_code=400, detail=f"Invalid wordlist format: {str(e)}")
+        except (json.JSONDecodeError, ValueError):
+            # Fall back to comma-separated parsing
+            try:
+                wordlist_parsed = [word.strip() for word in wordlist.split(',') if word.strip()]
+                if not wordlist_parsed:
+                    raise ValueError("Wordlist cannot be empty")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid wordlist format. Use JSON array like [\"word1\",\"word2\"] or comma-separated like \"word1,word2\": {str(e)}")
         
         # Create request object
         request = PrecisionDrillRequest(wordlist=wordlist_parsed)
