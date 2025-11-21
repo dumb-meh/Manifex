@@ -7,7 +7,7 @@ import json
 router = APIRouter()
 listen_speak= ListenSpeak()   
 
-@router.post("/context_spin", response_model=ContextSpinResponse)
+@router.post("/context_spin", response_model=ListenSpeakResponse)
 async def  context_spin_score(
     word: str = Form(...)
     file: UploadFile = File(...),
