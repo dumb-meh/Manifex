@@ -5,6 +5,7 @@ services:
       - "8061:8061"
     volumes:
       - .:/app
+      - ./temp_audio:/app/temp_audio
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped

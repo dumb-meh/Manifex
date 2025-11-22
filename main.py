@@ -1,4 +1,5 @@
 import uvicorn
+import asyncio
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +13,9 @@ from app.services.Presentation.power_words.power_words_route import router as po
 from app.services.Presentation.flow_chain.flow_chain_route import router as flow_chain_router
 from app.services.Presentation.context_spin.context_spin_route import router as context_spin_router
 from app.services.Presentation.precision_drill.precision_drill_route import router as precision_drill_router
+from app.services.Speaking.listen_speak.listen_speak_route import router as listen_speak_router
+from app.services.Speaking.phrase_repeat.phrase_repeat_route import router as phrase_repeat_router
+from app.utils.temp_cleanup import start_cleanup_service
 app = FastAPI(
     title="Writing AI API",
     description="An API for AI-powered writing assistance with topic generation and scoring.",
@@ -38,6 +42,27 @@ app.include_router(power_words_router, prefix="/power_words", tags=["presentatio
 app.include_router(flow_chain_router, prefix="/flow_chain", tags=["presentation"])
 app.include_router(context_spin_router, prefix="/context_spin", tags=["presentation"])
 app.include_router(precision_drill_router, prefix="/precision_drill", tags=["presentation"])
+app.include_router(listen_speak_router, prefix="/listen_speak", tags=["speaking"])
+app.include_router(phrase_repeat_router, prefix="/phrase_repeat", tags=["speaking"])
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background services when the app starts"""
+    # Ensure temp_audio directory exists
+    from pathlib import Path
+    temp_dir = Path("temp_audio")
+    temp_dir.mkdir(exist_ok=True)
+    print(f"Temp audio directory initialized: {temp_dir.absolute()}")
+    
+    # Start the temp file cleanup service in the background
+    asyncio.create_task(start_cleanup_service())
+    print("Temp file cleanup service started - will run every 6 hours")
+
+# Docker Volume Mount:
+# Add this to your docker-compose.yml or docker run command:
+# volumes:
+#   - ./temp_audio:/app/temp_audio
+# or: docker run -v ./temp_audio:/app/temp_audio ...
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8061)

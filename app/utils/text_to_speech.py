@@ -63,3 +63,51 @@ def create_audio_response(audio_buffer: io.BytesIO) -> StreamingResponse:
         media_type="audio/mpeg",
         headers={"Content-Disposition": "attachment; filename=speech.mp3"}
     )
+
+async def generate_parallel_audio_files(texts: list, prefix: str = "audio") -> list:
+    """
+    Generate TTS audio files for multiple texts in parallel
+    
+    Args:
+        texts: List of text strings to convert to speech
+        prefix: Prefix for the generated filenames
+        
+    Returns:
+        List of file paths to generated audio files
+    """
+    import asyncio
+    from pathlib import Path
+    
+    async def create_single_audio_file(text: str, index: int) -> str:
+        """Create a single TTS audio file"""
+        try:
+            result = await convert_text_to_speech(text)
+            
+            if not result["success"]:
+                print(f"TTS failed for {prefix} {index}: {result['message']}")
+                return None
+            
+            # Use custom temp_audio directory
+            temp_dir = Path("temp_audio")
+            temp_dir.mkdir(exist_ok=True)
+            
+            # Generate unique filename
+            filename = f"{prefix}_{index}_{hash(text) % 10000}.mp3"
+            file_path = temp_dir / filename
+            
+            # Save audio to file
+            with open(file_path, "wb") as f:
+                f.write(result["audio"].getvalue())
+            
+            return str(file_path)
+            
+        except Exception as e:
+            print(f"Error creating audio file for {prefix} {index}: {e}")
+            return None
+    
+    # Generate all audio files in parallel
+    tasks = [create_single_audio_file(text, i) for i, text in enumerate(texts)]
+    audio_files = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # Filter out None values and exceptions
+    return [file_path for file_path in audio_files if isinstance(file_path, str)]

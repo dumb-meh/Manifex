@@ -5,8 +5,8 @@ class PhraseRepeatRequest(BaseModel):
     phrase_list: list[str]
 
 class PhraseRepeatResponse(BaseModel):
-    score:int
-    feedback:str
-    status:str
-    message:str
+    score: int = 0
+    feedback: str = "No feedback available"
+    status: str = "error"
+    message: str = "Evaluation failed"
     
