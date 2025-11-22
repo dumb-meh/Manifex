@@ -10,7 +10,7 @@ class WordPartsWorkshop:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
         
-    def word_parts_score(self) -> WordPartsResponse:
+    def get_word_parts(self) -> WordPartsResponse:
         prompt = self.create_prompt()
         response = self.get_openai_response(prompt)
         return self.format_response(response)
