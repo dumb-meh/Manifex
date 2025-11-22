@@ -17,10 +17,10 @@ from app.services.Adult.word_flash.word_flash_route import router as word_flash_
 from app.services.Adult.word_parts_workshop.word_parts_workshop_route import router as word_parts_workshop_router
 from app.services.Adult.sentence_builder.sentence_builder_route import router as sentence_builder_router
 
-# Create main API router
+
 api_router = APIRouter()
 
-# Include all routers with v1 prefix and appropriate tags
+
 api_router.include_router(writing_router, prefix="/writing", tags=["writing"])
 
 api_router.include_router(sight_word_router, prefix="/reading/sight-word-practice", tags=["reading"])
