@@ -16,6 +16,7 @@ from app.services.Speaking.vocabulary_challenge.vocabulary_challenge_route impor
 from app.services.Adult.word_flash.word_flash_route import router as word_flash_router
 from app.services.Adult.word_parts_workshop.word_parts_workshop_route import router as word_parts_workshop_router
 from app.services.Adult.sentence_builder.sentence_builder_route import router as sentence_builder_router
+from app.services.Adult.phrase_maker.phrase_maker_route import router as phrase_maker_router
 
 
 api_router = APIRouter()
@@ -40,3 +41,4 @@ api_router.include_router(vocabulary_challenge_router, prefix="/speaking/vocabul
 api_router.include_router(word_flash_router, prefix="/adult/word-flash", tags=["adult"])
 api_router.include_router(word_parts_workshop_router, prefix="/adult/word-parts-workshop", tags=["adult"])
 api_router.include_router(sentence_builder_router, prefix="/adult/sentence-builder", tags=["adult"])
+api_router.include_router(phrase_maker_router, prefix="/adult/phrase-maker", tags=["adult"])
