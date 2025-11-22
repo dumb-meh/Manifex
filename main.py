@@ -18,6 +18,7 @@ from app.services.Speaking.listen_speak.listen_speak_route import router as list
 from app.services.Speaking.phrase_repeat.phrase_repeat_route import router as phrase_repeat_router
 from app.services.Speaking.pronunciation.pronunciation_route import router as pronunciation_router
 from app.services.Speaking.vocabulary_challenge.vocabulary_challenge_route import router as vocabulary_challenge_router
+from app.services.Adult.word_flash.word_flash_route import router as word_flash_router
 from app.utils.temp_cleanup import start_cleanup_service
 app = FastAPI(
     title="Writing AI API",
@@ -50,6 +51,8 @@ app.include_router(listen_speak_router, prefix="/listen_speak", tags=["speaking"
 app.include_router(phrase_repeat_router, prefix="/phrase_repeat", tags=["speaking"])
 app.include_router(pronunciation_router, prefix="/pronunciation", tags=["speaking"])
 app.include_router(vocabulary_challenge_router, prefix="/vocabulary_challenge", tags=["speaking"])
+
+app.include_router(word_flash_router, prefix="/word_flash", tags=["adult"])
 
 @app.on_event("startup")
 async def startup_event():
