@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class PhraseRepeatRequest(BaseModel):
-    phrase_list: list[str]
+    phrase: str
 
 class PhraseRepeatResponse(BaseModel):
     score: int = 0

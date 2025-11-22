@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ListenSpeakRequest(BaseModel):
-    word: str
+    sentence: str
 
 class ListenSpeakResponse(BaseModel):
     score: int = 0
