@@ -9,7 +9,7 @@ listen_speak= ListenSpeak()
 
 @router.post("/listen_speak", response_model=ListenSpeakResponse)
 async def listen_speak_score(
-    word: str = Form(...),
+    sentence: str = Form(...),
     file: UploadFile = File(...),
     authtoken: str = Header(...)
 ):
@@ -20,7 +20,7 @@ async def listen_speak_score(
     
     try:
         transcript = await convert_audio_to_text(file)
-        request = ListenSpeakRequest(word=word)
+        request = ListenSpeakRequest(sentence=sentence)
         response = listen_speak.listen_speak_score(request, transcript['text'])
         return response
     except Exception as e:

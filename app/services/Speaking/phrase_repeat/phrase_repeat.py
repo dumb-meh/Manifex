@@ -20,7 +20,7 @@ class PhraseRepeat:
         prompt = f"""
         You are an expert speaking coach. Evaluate the user's pronunciation based on the following criteria: clarity, fluency, intonation, and overall effectiveness in conveying the intended message.
         you will recive the following by:
-        phrase_list: {input.phrase_list}
+        phrase: {input.phrase}
         user transcript: {transcript}
         score each aspect on a scale of 1-10 and provide constructive feedback and suggestions for improvement
         The json response must be exactly in this format
@@ -68,7 +68,6 @@ class PhraseRepeat:
             parsed_response = json.loads(response)
             phrases = parsed_response.get('phrases', [])
             
-            # Generate TTS audio files in parallel for all phrases
             audio_files = await generate_parallel_audio_files(phrases, "phrase")
             
             return {

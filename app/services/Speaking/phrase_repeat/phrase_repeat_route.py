@@ -9,7 +9,7 @@ phrase_repeat = PhraseRepeat()
 
 @router.post("/phrase_repeat", response_model=PhraseRepeatResponse)
 async def phrase_repeat_score(
-    phrases: str = Form(...),
+    phrase: str = Form(...),
     file: UploadFile = File(...),
     authtoken: str = Header(...)
 ):
@@ -18,19 +18,9 @@ async def phrase_repeat_score(
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid auth token")
 
-    try:
-        # Parse phrases input (JSON or comma-separated)
-        try:
-            phrase_list = json.loads(phrases)
-            if not isinstance(phrase_list, list):
-                raise ValueError("Phrases must be a list")
-        except (json.JSONDecodeError, ValueError):
-            phrase_list = [phrase.strip() for phrase in phrases.split(',') if phrase.strip()]
-            if not phrase_list:
-                raise HTTPException(status_code=400, detail="Phrase list cannot be empty")
-    
+    try: 
         transcript = await convert_audio_to_text(file)
-        request = PhraseRepeatRequest(phrase_list=phrase_list)
+        request = PhraseRepeatRequest(phrase_list=phrase)
         response = phrase_repeat.phrase_repeat_score(request, transcript['text'])
         return response
     except Exception as e:
