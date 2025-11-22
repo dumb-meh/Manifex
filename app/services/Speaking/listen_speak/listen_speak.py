@@ -1,6 +1,7 @@
 import os
 from openai import OpenAI
 from app.services.Speaking.listen_speak.listen_speak_schema import ListenSpeakRequest, ListenSpeakResponse
+from app.utils.text_to_speech import generate_parallel_audio_files
 import json
 
 
@@ -52,19 +53,27 @@ class ListenSpeak:
             print(f"Error creating ListenSpeakResponse: {e}")
             return ListenSpeakResponse()
         
-    def generate_listen_speak(self, age) -> dict:
-        prompt = f"""You are expert speaking coach. In order to improve speaking skills, you will provide a list of 5 challenging words based on their age. User age is {age}.
+    async def generate_listen_speak(self, age) -> dict:
+        prompt = f"""You are expert speaking coach. In order to improve speaking skills, you will provide a list of 5 challenging sentences based on their age. User age is {age}.
         
         Return ONLY a JSON object in this exact format:
         {{
-            "words": ["word1", "word2", "word3", "word4", "word5"]
+            "sentences": ["sentence1", "sentence2", "sentence3", "sentence4", "sentence5"]
         }}
         
         Do not include any additional text or formatting."""
         response = self.get_openai_response(prompt)
         try:
             parsed_response = json.loads(response)
-            return parsed_response
+            sentences = parsed_response.get('sentences', [])
+            
+            # Generate TTS audio files in parallel using the reusable utility function
+            audio_files = await generate_parallel_audio_files(sentences, "sentence")
+            
+            return {
+                "sentences": sentences,
+                "audio_files": audio_files
+            }
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
-            return {"words": []}
+            return {"sentences": [], "audio_files": []}

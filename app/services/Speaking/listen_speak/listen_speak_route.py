@@ -37,7 +37,7 @@ async def get_listen_speak(
         raise HTTPException(status_code=401, detail="Invalid auth token")
     
     try:
-        response = listen_speak.generate_listen_speak(age)
+        response = await listen_speak.generate_listen_speak(age)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
