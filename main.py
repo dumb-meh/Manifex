@@ -20,8 +20,6 @@ app.add_middleware(
 )
 
 
-
-# Include API v1 routes with versioning
 app.include_router(api_router, prefix="/api/v1")
 
 @app.on_event("startup")
