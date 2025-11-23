@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, Query
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from .word_flash import WordFlash
 from .word_flash_schema import WordFlashRequest, WordFlashResponse
 from app.utils.verify_auth import verify_token
@@ -28,7 +28,6 @@ async def word_flash_score(
     
 @router.get("/get_word_flash")
 async def get_word_flash(
-    age: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

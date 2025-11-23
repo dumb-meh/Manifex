@@ -5,10 +5,8 @@ from dotenv import load_dotenv
 from fastapi.responses import StreamingResponse
 import io
 
-# Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 async def convert_text_to_speech(text: str, voice: Optional[str] = "alloy") -> dict:
@@ -28,8 +26,7 @@ async def convert_text_to_speech(text: str, voice: Optional[str] = "alloy") -> d
             voice=voice,
             input=text
         )
-        
-        # Create a BytesIO object to store the audio data
+
         audio_buffer = io.BytesIO()
         for chunk in response.iter_bytes():
             audio_buffer.write(chunk)
@@ -86,28 +83,25 @@ async def generate_parallel_audio_files(texts: list, prefix: str = "audio") -> l
             if not result["success"]:
                 print(f"TTS failed for {prefix} {index}: {result['message']}")
                 return None
-            
-            # Use custom temp_audio directory
+
             temp_dir = Path("temp_audio")
             temp_dir.mkdir(exist_ok=True)
             
-            # Generate unique filename
             filename = f"{prefix}_{index}_{hash(text) % 10000}.mp3"
             file_path = temp_dir / filename
-            
-            # Save audio to file
+
             with open(file_path, "wb") as f:
                 f.write(result["audio"].getvalue())
             
-            return str(file_path)
+            host = os.getenv("API_HOST", "127.0.0.1")
+            port = os.getenv("API_PORT", "8061")
+            return f"http://{host}:{port}/temp_audio/{filename}"
             
         except Exception as e:
             print(f"Error creating audio file for {prefix} {index}: {e}")
             return None
     
-    # Generate all audio files in parallel
     tasks = [create_single_audio_file(text, i) for i, text in enumerate(texts)]
     audio_files = await asyncio.gather(*tasks, return_exceptions=True)
     
-    # Filter out None values and exceptions
     return [file_path for file_path in audio_files if isinstance(file_path, str)]
