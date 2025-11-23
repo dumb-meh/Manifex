@@ -68,22 +68,19 @@ class AuditoryDiscrimination:
                 enriched_pair = {
                     "word1": word1,
                     "word2": word2,
-                    "audio_file1": None,  # Will be filled after audio generation
-                    "audio_file2": None   # Will be filled after audio generation
+                    "audio_file1": None,  
+                    "audio_file2": None   
                 }
             
             enriched_word_pairs.append(enriched_pair)
         
-        # Generate TTS audio files for unique texts only
         audio_files = await generate_parallel_audio_files(texts_to_convert, "word_pair")
         
-        # Create a mapping from text to audio file path
         text_to_audio = {}
         for text, audio_file in zip(texts_to_convert, audio_files):
-            if audio_file:  # Only map if audio generation was successful
+            if audio_file: 
                 text_to_audio[text] = audio_file
         
-        # Fill in the audio file paths in enriched_word_pairs
         for i, (pair, answer) in enumerate(zip(word_pairs, answers)):
             word1 = pair.get('word1', '')
             word2 = pair.get('word2', '')
@@ -91,10 +88,8 @@ class AuditoryDiscrimination:
             enriched_word_pairs[i]["audio_file1"] = text_to_audio.get(word1)
             
             if answer.lower() == "same" or word1 == word2:
-                # Use the same audio file for both words
                 enriched_word_pairs[i]["audio_file2"] = text_to_audio.get(word1)
             else:
-                # Use different audio files
                 enriched_word_pairs[i]["audio_file2"] = text_to_audio.get(word2)
         
         return enriched_word_pairs
@@ -127,16 +122,5 @@ class AuditoryDiscrimination:
             messages=[ {"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
-    
-    def format_response(self, response: str) -> AuditoryDiscriminationResponse:
-        try:
-            parsed_data = json.loads(response)
-            return AuditoryDiscriminationResponse(**parsed_data)
-        except json.JSONDecodeError as e:
-            print(f"Error parsing JSON response: {e}")
-            return AuditoryDiscriminationResponse()
-        except Exception as e:
-            print(f"Error creating AuditoryDiscriminationResponse: {e}")
-            return AuditoryDiscriminationResponse()
         
     
