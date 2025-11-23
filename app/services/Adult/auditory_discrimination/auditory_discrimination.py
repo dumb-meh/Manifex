@@ -19,7 +19,6 @@ class AuditoryDiscrimination:
             word_pairs = parsed_response.get('word_pairs', [])
             answers = parsed_response.get('answers', [])
             
-            # Create optimized audio generation based on word pairs and answers
             enriched_word_pairs = await self.generate_optimized_audio(word_pairs, answers)
             
             return {
@@ -34,9 +33,8 @@ class AuditoryDiscrimination:
         """
         Generate audio files optimally - only generate once for same words, twice for different words
         """
-        # Create a list of unique texts to convert and track their mapping
         texts_to_convert = []
-        text_mapping = {}  # Maps index in texts_to_convert to audio file path
+        text_mapping = {} 
         enriched_word_pairs = []
         
         for i, (pair, answer) in enumerate(zip(word_pairs, answers)):
@@ -44,7 +42,6 @@ class AuditoryDiscrimination:
             word2 = pair.get('word2', '')
             
             if answer.lower() == "same" or word1 == word2:
-                # Same words - generate audio only once
                 if word1 not in text_mapping:
                     text_mapping[word1] = len(texts_to_convert)
                     texts_to_convert.append(word1)
@@ -52,11 +49,10 @@ class AuditoryDiscrimination:
                 enriched_pair = {
                     "word1": word1,
                     "word2": word2,
-                    "audio_file1": None,  # Will be filled after audio generation
-                    "audio_file2": None   # Will be same as audio_file1
+                    "audio_file1": None,  
+                    "audio_file2": None   
                 }
             else:
-                # Different words - generate audio for both
                 if word1 not in text_mapping:
                     text_mapping[word1] = len(texts_to_convert)
                     texts_to_convert.append(word1)
@@ -97,22 +93,37 @@ class AuditoryDiscrimination:
     
     def create_prompt(self) -> str:
         prompt = """
-        You are an expert speaking language learning expert. Your job is to create auditory discrimination exercises to help users improve their listening skills.
-        Generate 5 pairs of similar-sounding words that are commonly confused in English. Some pairs should be the same word written twice, others should be different similar-sounding words.
+        You are an expert language learning specialist creating auditory discrimination exercises. Generate high-quality word pairs for pronunciation practice.
+        
+        Requirements:
+        - Generate exactly 5 word pairs
+        - Use meaningful, common English words (NOT function words like "to", "a", "the")
+        - Include some paris that are identical (same word twice), (it may be 0 to 3 pairs)
+        - Include some pairs that are similar-sounding but different (it may be 0 to 5 pairs)
+        - Focus on minimal pairs that differ by one sound (ship/sheep, pen/pin, etc.)
+        - Use words that are at least 3 letters long
+        - Avoid proper nouns, abbreviations, or uncommon words
+        
+        Good examples of different pairs:
+        - ship/sheep (i/ee sound difference)
+        - pen/pin (e/i vowel difference)  
+        - cat/cut (a/u vowel difference)
+        - bear/beer (ar/eer ending difference)
+        - thick/sick (th/s consonant difference)
         
         Please return ONLY valid JSON in exactly this format:
         {
             "word_pairs": [
-                {"word1": "bat", "word2": "bat"},
-                {"word1": "ship", "word2": "sheep"},
-                {"word1": "cat", "word2": "cut"},
+                {"word1": "ship", "word2": "ship"},
                 {"word1": "pen", "word2": "pin"},
-                {"word1": "full", "word2": "fool"}
+                {"word1": "cat", "word2": "cut"},
+                {"word1": "bear", "word2": "beer"},
+                {"word1": "thick", "word2": "thick"}
             ],
-            "answers": ["same", "different", "different", "different", "different"]
+            "answers": ["same", "different", "different", "different", "same"]
         }
         
-        Make sure the answers array corresponds to whether each word pair is "same" or "different".
+        Ensure the answers array correctly indicates "same" or "different" for each pair.
         """  
         return prompt
     

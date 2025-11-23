@@ -2,6 +2,7 @@ import uvicorn
 import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from app.api.v1.routes import api_router
 from app.utils.temp_cleanup import start_cleanup_service
@@ -21,6 +22,8 @@ app.add_middleware(
 
 
 app.include_router(api_router, prefix="/api/v1")
+
+app.mount("/temp_audio", StaticFiles(directory="temp_audio"), name="temp_audio")
 
 @app.on_event("startup")
 async def startup_event():
