@@ -16,14 +16,37 @@ class PhraseMaker:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        prompt = f"""
-        You are an English learning coach. Create 5 phrases using different words. For each phrase, return it as a list of words that will be used to shuffle and build phrases. 
-        Return ONLY a JSON object in this exact format:
-        {{
-            "phrases": [["go", "to", "work"], ["deep","in","thought"]]
-        }}
+        prompt = """
+        You are an English learning coach. Create exactly 5 PHRASES (NOT sentences) for vocabulary building exercises.
         
-        Do not include any additional text or formatting."""
+        STRICT REQUIREMENTS:
+        - Generate PHRASES only (noun phrases, verb phrases, prepositional phrases)
+        - DO NOT generate complete sentences (no subject + predicate combinations)
+        - Each phrase should be 2-5 words long
+        - Focus on common English phrases that learners should know
+        - NO punctuation, articles should be minimal
+        - Examples of GOOD phrases: "under the bridge", "very important", "in the morning", "red sports car", "extremely difficult"
+        - Examples of BAD phrases (these are sentences): "I go to work", "She is happy", "They were running"
+        
+        Valid phrase types:
+        - Noun phrases: "big red car", "my best friend" 
+        - Prepositional phrases: "in the park", "under the table"
+        - Adjective phrases: "very tall", "extremely beautiful"
+        - Verb phrases: "running fast", "sleeping peacefully"
+        - Adverb phrases: "very quickly", "quite often"
+        
+        Return ONLY a JSON object in this exact format:
+        {
+            "phrases": [
+                ["under", "the", "bridge"],
+                ["very", "important"],
+                ["red", "sports", "car"],
+                ["in", "the", "morning"],
+                ["extremely", "difficult"]
+            ]
+        }
+        
+        Do not include any additional text, explanations, or formatting."""
         return prompt
     
     def get_openai_response(self, prompt: str) -> str:
