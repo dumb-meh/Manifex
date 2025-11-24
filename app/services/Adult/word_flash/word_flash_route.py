@@ -36,7 +36,7 @@ async def get_word_flash(
         raise HTTPException(status_code=401, detail="Invalid auth token")
     
     try:
-        response = word_flash.generate_word_flash(age)
+        response = word_flash.generate_word_flash()
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
