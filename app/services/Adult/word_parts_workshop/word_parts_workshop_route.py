@@ -18,7 +18,7 @@ async def get_word_parts(
         raise HTTPException(status_code=401, detail="Invalid auth token")
     
     try:
-        response = word_parts_workshop.word_parts_score()
+        response = word_parts_workshop.get_word_parts()
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
