@@ -119,8 +119,7 @@ class AuditoryDiscrimination:
                 {"word1": "cat", "word2": "cut","answer": "different"},
                 {"word1": "bear", "word2": "beer","answer": "different"},
                 {"word1": "thick", "word2": "thick","answer": "same"}
-            ],
-            "answers": ["same", "different", "different", "different", "same"]
+          ]
         }
         
         Ensure the answers array correctly indicates "same" or "different" for each pair.
