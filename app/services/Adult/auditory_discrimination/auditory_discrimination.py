@@ -114,11 +114,11 @@ class AuditoryDiscrimination:
         Please return ONLY valid JSON in exactly this format:
         {
             "word_pairs": [
-                {"word1": "ship", "word2": "ship"},
-                {"word1": "pen", "word2": "pin"},
-                {"word1": "cat", "word2": "cut"},
-                {"word1": "bear", "word2": "beer"},
-                {"word1": "thick", "word2": "thick"}
+                {"word1": "ship", "word2": "ship","answer": "same"},
+                {"word1": "pen", "word2": "pin","answer": "different"},
+                {"word1": "cat", "word2": "cut","answer": "different"},
+                {"word1": "bear", "word2": "beer","answer": "different"},
+                {"word1": "thick", "word2": "thick","answer": "same"}
             ],
             "answers": ["same", "different", "different", "different", "same"]
         }

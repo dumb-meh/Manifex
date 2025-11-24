@@ -2,6 +2,4 @@ from pydantic import BaseModel
 from typing import Optional, Any
 
 class AuditoryDiscriminationResponse(BaseModel):
-    word_pairs: list[dict[str, Any]]
-    answers: list[str]
-    
+    word_pairs: list[list[dict[str, Any]]]
