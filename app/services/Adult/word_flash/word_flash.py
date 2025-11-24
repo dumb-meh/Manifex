@@ -52,7 +52,7 @@ class WordFlash:
             print(f"Error creating WordFlashResponse: {e}")
             return WordFlashResponse()
         
-    def generate_word_flash(self, age) -> dict:
+    def generate_word_flash(self) -> dict:
         prompt = f"""You are expert speaking coach. In order to improve speaking skills, you will provide a list of 5 challenging words.
         
         Return ONLY a JSON object in this exact format:
