@@ -1,7 +1,6 @@
 import os
 from openai import OpenAI
 from app.services.Speaking.vocabulary_challenge.vocabulary_challenge_schema import VocabularyRequest, VocabularyResponse
-from app.utils.text_to_speech import generate_parallel_audio_files
 import json
 
 
@@ -67,12 +66,9 @@ class VocabularyChallenge:
             parsed_response = json.loads(response)
             words = parsed_response.get('words', [])
             
-            audio_files = await generate_parallel_audio_files(words, "word")
-            
             return {
-                "words": words,
-                "audio_files": audio_files
+                "words": words
             }
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
-            return {"words": [], "audio_files": []}
+            return {"words": []}

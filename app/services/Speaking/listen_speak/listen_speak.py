@@ -1,7 +1,6 @@
 import os
 from openai import OpenAI
 from app.services.Speaking.listen_speak.listen_speak_schema import ListenSpeakRequest, ListenSpeakResponse
-from app.utils.text_to_speech import generate_parallel_audio_files
 import json
 
 
@@ -67,13 +66,9 @@ class ListenSpeak:
             parsed_response = json.loads(response)
             sentences = parsed_response.get('sentences', [])
             
-            # Generate TTS audio files in parallel using the reusable utility function
-            audio_files = await generate_parallel_audio_files(sentences, "sentence")
-            
             return {
-                "sentences": sentences,
-                "audio_files": audio_files
+                "sentences": sentences
             }
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
-            return {"sentences": [], "audio_files": []}
+            return {"sentences": []}
