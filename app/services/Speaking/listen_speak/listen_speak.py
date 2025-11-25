@@ -53,14 +53,55 @@ class ListenSpeak:
             return ListenSpeakResponse()
         
     async def generate_listen_speak(self, age) -> dict:
-        prompt = f"""You are expert speaking coach. In order to improve speaking skills, you will provide a list of 5 challenging sentences based on their age. User age is {age}.
+        age_int = int(age)
         
-        Return ONLY a JSON object in this exact format:
-        {{
-            "sentences": ["sentence1", "sentence2", "sentence3", "sentence4", "sentence5"]
-        }}
+        # Define age-appropriate sentence guidelines
+        if age_int < 8:
+            sentence_guide = {
+                "length": "3-5 words maximum",
+                "complexity": "very simple",
+                "examples": "I like cats, The sun is hot, My dog runs fast, Birds can fly, I eat apples"
+            }
+        elif age_int < 12:
+            sentence_guide = {
+                "length": "5-8 words maximum", 
+                "complexity": "simple",
+                "examples": "The happy cat sleeps on the bed, I want to play outside today, My favorite color is bright blue"
+            }
+        elif age_int < 16:
+            sentence_guide = {
+                "length": "8-12 words maximum",
+                "complexity": "moderate", 
+                "examples": "The children played games in the park after school, I really enjoy reading interesting books on weekends"
+            }
+        else:
+            sentence_guide = {
+                "length": "10-15 words maximum",
+                "complexity": "challenging but reasonable",
+                "examples": "The talented musician practiced diligently every day to improve their performance skills significantly"
+            }
         
-        Do not include any additional text or formatting."""
+        prompt = f"""You are an expert speaking coach. Generate 5 age-appropriate sentences for a {age}-year-old child to practice speaking.
+
+STRICT REQUIREMENTS FOR AGE {age}:
+- Each sentence must be {sentence_guide['length']}
+- Use {sentence_guide['complexity']} vocabulary appropriate for age {age}
+- Focus on clear pronunciation practice, not tongue twisters
+- Use familiar topics: family, animals, food, school, play, colors, etc.
+- Examples: {sentence_guide['examples']}
+
+AVOID:
+- Tongue twisters or overly complex phrases
+- Advanced vocabulary beyond the child's age level
+- Sentences longer than the specified word count
+- Repetitive alliterative phrases
+
+Return ONLY a JSON object in this exact format:
+{{
+    "sentences": ["sentence1", "sentence2", "sentence3", "sentence4", "sentence5"]
+}}
+
+Make sure each sentence is appropriate for a {age}-year-old's speaking ability."""
         response = self.get_openai_response(prompt)
         try:
             parsed_response = json.loads(response)
