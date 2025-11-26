@@ -1,4 +1,5 @@
 import os
+import random
 from openai import OpenAI
 from app.services.Adult.sentence_builder.sentence_builder_schema import SentenceBuilderResponse, SentenceItem
 import json
@@ -61,9 +62,13 @@ class SentenceBuilder:
             sentence_items = []
             for sentence_dict in sentences_data:
                 if isinstance(sentence_dict, dict) and 'sentence' in sentence_dict and 'sentence_options' in sentence_dict:
+                    # Shuffle the sentence options for the exercise
+                    shuffled_options = sentence_dict['sentence_options'].copy()
+                    random.shuffle(shuffled_options)
+                    
                     sentence_items.append(SentenceItem(
                         sentence=sentence_dict['sentence'],
-                        sentence_options=sentence_dict['sentence_options']
+                        sentence_options=shuffled_options
                     ))
             
             return SentenceBuilderResponse(sentences=sentence_items)
