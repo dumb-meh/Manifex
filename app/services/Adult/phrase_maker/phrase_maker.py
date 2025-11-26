@@ -1,4 +1,5 @@
 import os
+import random
 from openai import OpenAI
 from app.services.Adult.phrase_maker.phrase_maker_schema import PhraseMakerResponse, PhraseItem
 import json
@@ -65,9 +66,13 @@ class PhraseMaker:
             phrase_items = []
             for phrase_dict in phrases_data:
                 if isinstance(phrase_dict, dict) and 'phrase' in phrase_dict and 'phrase_options' in phrase_dict:
+                    # Shuffle the phrase options for the exercise
+                    shuffled_options = phrase_dict['phrase_options'].copy()
+                    random.shuffle(shuffled_options)
+                    
                     phrase_items.append(PhraseItem(
                         phrase=phrase_dict['phrase'],
-                        phrase_options=phrase_dict['phrase_options']
+                        phrase_options=shuffled_options
                     ))
             
             return PhraseMakerResponse(phrases=phrase_items)
