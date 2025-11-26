@@ -1,6 +1,6 @@
 import os
 from openai import OpenAI
-from app.services.Adult.phrase_maker.phrase_maker_schema import PhraseMakerResponse
+from app.services.Adult.phrase_maker.phrase_maker_schema import PhraseMakerResponse, PhraseItem
 import json
 
 
@@ -35,14 +35,14 @@ class PhraseMaker:
         - Verb phrases: "running fast", "sleeping peacefully"
         - Adverb phrases: "very quickly", "quite often"
         
-        Return ONLY a JSON object in this exact format:
+        Return ONLY a JSON object in this exact format: in the phrase, you will write the phrase and in phrase_options, you will split the phrase into individual words.
         {
             "phrases": [
-                ["under", "the", "bridge"],
-                ["very", "important"],
-                ["red", "sports", "car"],
-                ["in", "the", "morning"],
-                ["extremely", "difficult"]
+                {"phrase": "under the bridge", "phrase_options": ["under", "the", "bridge"]},
+                {"phrase": "very important", "phrase_options": ["very", "important"]},
+                {"phrase": "red sports car", "phrase_options": ["red", "sports", "car"]},
+                {"phrase": "in the morning", "phrase_options": ["in", "the", "morning"]},
+                {"phrase": "extremely difficult", "phrase_options": ["extremely", "difficult"]}
             ]
         }
         
@@ -59,9 +59,19 @@ class PhraseMaker:
     def format_response(self, response: str) -> PhraseMakerResponse:
         try:
             parsed_data = json.loads(response)
-            return PhraseMakerResponse(
-                phrases=parsed_data.get('phrases', [])
-            )
+            phrases_data = parsed_data.get('phrases', [])
+            
+            # Convert each phrase dict to PhraseItem
+            phrase_items = []
+            for phrase_dict in phrases_data:
+                if isinstance(phrase_dict, dict) and 'phrase' in phrase_dict and 'phrase_options' in phrase_dict:
+                    phrase_items.append(PhraseItem(
+                        phrase=phrase_dict['phrase'],
+                        phrase_options=phrase_dict['phrase_options']
+                    ))
+            
+            return PhraseMakerResponse(phrases=phrase_items)
+            
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
             return PhraseMakerResponse()
