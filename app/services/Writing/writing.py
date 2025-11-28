@@ -17,6 +17,12 @@ class Writing:
             "Meditation", "Gaming", "Animals"
         ]
 
+    def get_category(self, age: str) -> str:
+        """Get a random category from available topics based on age"""
+        # For now, return a random category regardless of age
+        # You can add age-specific logic here if needed
+        return random.choice(self.available_topics)
+    
     def get_topic(self, topic_request: TopicRequest = None) -> InitialTopicResponse:
         # Use provided topic or randomly select one if not provided
         if topic_request and topic_request.topic:

@@ -34,3 +34,6 @@ class FinalScoreRequest(BaseModel):
 class FinalScoreResponse(BaseModel):
     sentence_score: int  # Score out of 10 for overall writing quality
     motivation: str  # Motivational message and feedback
+
+class CategoryResponse(BaseModel):
+    category: str  # One of the available topic categories

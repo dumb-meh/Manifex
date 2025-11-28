@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Body, Header
+from fastapi import APIRouter, HTTPException, Body, Header, Query
 from .writing import Writing
-from .writing_schema import FinalScoreRequest, FinalScoreResponse, InitialTopicResponse, TopicRequest 
+from .writing_schema import FinalScoreRequest, FinalScoreResponse, InitialTopicResponse, TopicRequest, CategoryResponse
 from app.utils.verify_auth import verify_token
 
 router= APIRouter()
@@ -33,5 +33,20 @@ async def get_final_score(request_data: FinalScoreRequest, authtoken: str = Head
     try:
         response = writing.get_writing_score(request_data)
         return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/category", response_model=CategoryResponse)
+async def get_category(age: str = Query(..., description="Age of the user"), authtoken: str = Header(...)):
+    try:
+        is_valid = verify_token(authtoken)
+        if not is_valid:  # ✅ Explicitly check if token is valid
+            raise HTTPException(status_code=401, detail="Invalid auth token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid auth token")
+    
+    try:
+        category = writing.get_category(age)
+        return CategoryResponse(category=category)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
