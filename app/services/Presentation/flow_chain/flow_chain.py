@@ -18,11 +18,11 @@ class FlowChain:
     def create_prompt(self, input: FlowChainRequest,transcript) -> str:
         prompt = f"""you are an expert presentation coach. Evaluate the following connected words based on their flow and relevance.
         connected words: {input.word_list}
-        transcript: {transcript}
-        score each aspect on a scale of 1-10 and provide constructive feedback and suggestions for improvement
+        user pronounced words: {transcript}
+        score it based on how many wors were used correctly in context on a scale of 0-100 and provide constructive feedback and suggestions for improvement.
         The json response must be exactly in this format
         {{
-            "score": 8,
+            "score": 86,
             "feedback": ""
             "status": "success",
             "message": "Evaluation completed successfully."

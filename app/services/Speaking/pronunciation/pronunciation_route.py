@@ -29,6 +29,7 @@ async def pronunciation_score(
 @router.get("/get_pronunciation")
 async def get_pronunciation(
     age: str = Query(...),
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

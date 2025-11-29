@@ -29,6 +29,7 @@ async def vocabulary_challenge_score(
 @router.get("/get_vocabulary")
 async def get_vocabulary(
     age: str = Query(...),
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

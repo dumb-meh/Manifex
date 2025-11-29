@@ -29,6 +29,7 @@ async def listen_speak_score(
 @router.get("/get_listen_speak")
 async def get_listen_speak(
     age: str = Query(...),
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

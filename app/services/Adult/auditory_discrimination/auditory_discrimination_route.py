@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Query
 from .auditory_discrimination_schema import AuditoryDiscriminationResponse
 from .auditory_discrimination import AuditoryDiscrimination
 from app.utils.verify_auth import verify_token
@@ -10,6 +10,7 @@ auditory_discrimination= AuditoryDiscrimination()
 
 @router.get("/get_auditory_discrimination", response_model=AuditoryDiscriminationResponse)
 async def get_auditory_discrimination(
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

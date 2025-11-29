@@ -6,7 +6,7 @@ from app.utils.verify_auth import verify_token
 router = APIRouter()
 
 @router.get("/generate_phoneme_flashcards", response_model=PhonemeFlashcardsResponse)
-async def generate_phoneme_flashcards(age: str = Query(..., description="Child's age "), authtoken: str = Header(...)):
+async def generate_phoneme_flashcards(age: str = Query(..., description="Child's age "), user_id: str = Query(...), authtoken: str = Header(...)):
     # Verify authentication token
     if not verify_token(authtoken):
         raise HTTPException(status_code=401, detail="Invalid auth token")

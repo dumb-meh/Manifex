@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Query
 from .phenome_mapping_schema import PhenomeMappingResponse
 from .phenome_mapping import PhenomeMapping
 from app.utils.verify_auth import verify_token
@@ -10,6 +10,7 @@ phenome_mapping = PhenomeMapping()
 
 @router.get("/get_phenome_mapping", response_model=PhenomeMappingResponse)
 async def get_phenome_mapping(
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

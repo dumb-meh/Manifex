@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, Query
 from .power_words import PowerWords
 from .power_words_schema import PowerWordsRequest, PowerWordsResponse
 from app.utils.verify_auth import verify_token
@@ -30,7 +30,10 @@ async def  power_words_score(
 
 
 @router.get("/get_power_words")
-async def  generate_power_words(authtoken: str = Header(...)):
+async def  generate_power_words(
+    user_id: str = Query(...),
+    authtoken: str = Header(...)
+):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:

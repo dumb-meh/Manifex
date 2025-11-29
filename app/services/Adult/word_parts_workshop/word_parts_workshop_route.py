@@ -10,6 +10,7 @@ word_parts_workshop = WordPartsWorkshop()
     
 @router.get("/get_word_parts", response_model=WordPartsResponse)
 async def get_word_parts(
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

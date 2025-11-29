@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, Query
 from .precision_drill import PrecisionDrill
 from .precision_drill_schema import PrecisionDrillRequest, PrecisionDrillResponse
 from app.utils.verify_auth import verify_token
@@ -44,7 +44,10 @@ async def  precision_drill_score(
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/get_precision_drill")
-async def  get_precision_drill(authtoken: str = Header(...)):
+async def  get_precision_drill(
+    user_id: str = Query(...),
+    authtoken: str = Header(...)
+):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:
