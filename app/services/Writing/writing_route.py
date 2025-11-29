@@ -46,7 +46,7 @@ async def get_category(age: str = Query(..., description="Age of the user"), aut
         raise HTTPException(status_code=401, detail="Invalid auth token")
     
     try:
-        category = writing.get_category(age)
-        return CategoryResponse(category=category)
+        categories = writing.get_category(age)
+        return CategoryResponse(categories=categories)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
