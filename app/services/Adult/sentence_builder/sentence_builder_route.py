@@ -8,6 +8,7 @@ sentence_builder = SentenceBuilder()
 
 @router.get("/get_sentences", response_model=SentenceBuilderResponse)
 async def get_sentences(
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

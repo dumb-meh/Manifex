@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, Query
 from .context_spin import ContextSpin
 from .context_spin_schema import ContextSpinRequest, ContextSpinResponse
 from app.utils.verify_auth import verify_token
@@ -40,7 +40,10 @@ async def  context_spin_score(
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/get_context_spin")
-async def  get_context_spin(authtoken: str = Header(...)):
+async def  get_context_spin(
+    user_id: str = Query(...),
+    authtoken: str = Header(...)
+):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:

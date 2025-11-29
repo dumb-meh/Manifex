@@ -29,6 +29,7 @@ async def phrase_repeat_score(
 @router.get("/get_phrase_repeat")
 async def get_phrase_repeat(
     age: str = Query(...),
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

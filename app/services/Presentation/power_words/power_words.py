@@ -19,7 +19,7 @@ class PowerWords:
     def create_prompt(self, input: PowerWordsRequest, definition: str, sentence: str) -> str:
         prompt = f"""You are an expert presentation coach. Evaluate the following word based on its impact, clarity, and relevance in presentations.
 
-    Scoring Criteria (1-10):
+    Scoring Criteria (0-100):
     - Impact: How powerful and memorable is this word?
     - Clarity: How well does the user understand and use the word?
     - Relevance: How suitable is this word for presentations?
@@ -33,7 +33,7 @@ class PowerWords:
 
     Respond in the following JSON format:
     {{
-        "score": 5,
+        "score": 56,
         "feedback": "Constructive feedback and suggestions for improvement",
         "status": "success",
         "message": "Brief summary of the evaluation"

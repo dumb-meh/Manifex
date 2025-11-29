@@ -8,6 +8,7 @@ phrase_maker = PhraseMaker()
 
 @router.get("/get_phrases", response_model=PhraseMakerResponse)
 async def get_phrases(
+    user_id: str = Query(...),
     authtoken: str = Header(...)
 ):
     try:

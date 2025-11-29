@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, Query
 from .flow_chain import FlowChain
 from .flow_chain_schema import FlowChainRequest, FlowChainResponse
 from app.utils.verify_auth import verify_token
@@ -43,7 +43,10 @@ async def  flow_chain_score(
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/get_flow_chain")
-async def  generate_flow_chain(authtoken: str = Header(...)):
+async def  generate_flow_chain(
+    user_id: str = Query(...),
+    authtoken: str = Header(...)
+):
     try:
         authtoken=verify_token(authtoken)
     except Exception as e:

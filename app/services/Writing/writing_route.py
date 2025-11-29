@@ -7,7 +7,7 @@ router= APIRouter()
 writing= Writing()
 
 @router.post("/topic", response_model=InitialTopicResponse)
-async def get_topic(request_data: TopicRequest = None, authtoken: str = Header(...)):
+async def get_topic(request_data: TopicRequest = None,user_id: str = Query(...), authtoken: str = Header(...)):
     try:
         is_valid = verify_token(authtoken)
         if not is_valid:  # ✅ Explicitly check if token is valid
