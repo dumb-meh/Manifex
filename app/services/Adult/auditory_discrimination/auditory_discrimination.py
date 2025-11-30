@@ -1,8 +1,11 @@
 import os
+import random
+import datetime
 from openai import OpenAI
 from app.services.Adult.auditory_discrimination.auditory_discrimination_schema import AuditoryDiscriminationResponse
 from app.utils.text_to_speech import generate_parallel_audio_files
 import json
+import re
 
 
 class AuditoryDiscrimination:
@@ -18,13 +21,8 @@ class AuditoryDiscrimination:
         print(f"Raw OpenAI response: {response}")
         
         try:
-            # Clean the response - remove any markdown code blocks or extra formatting
-            cleaned_response = response.strip()
-            if cleaned_response.startswith('```json'):
-                cleaned_response = cleaned_response[7:]
-            if cleaned_response.endswith('```'):
-                cleaned_response = cleaned_response[:-3]
-            cleaned_response = cleaned_response.strip()
+            # Clean the response using helper method
+            cleaned_response = self.clean_json_response(response)
             
             parsed_response = json.loads(cleaned_response)
             word_pairs_raw = parsed_response.get('word_pairs', [])
@@ -167,45 +165,109 @@ class AuditoryDiscrimination:
         
     
     def create_prompt(self) -> str:
-        prompt = """
-        You are an expert language learning specialist creating auditory discrimination exercises. Generate high-quality word pairs for pronunciation practice.
+        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        random_seed = random.randint(1000, 9999)
+        
+        same_pairs_count = random.randint(0, 2)
+        different_pairs_count = 5 - same_pairs_count
+
+        prompt_styles = [
+            "You are an expert language learning specialist",
+            "You are a professional speech therapist", 
+            "You are an experienced ESL teacher",
+            "You are a linguistics expert"
+        ]
+        
+        focus_areas = [
+            "Focus on minimal pairs that differ by one sound",
+            "Emphasize vowel sound differences",
+            "Include consonant substitution patterns",
+            "Mix vowel and consonant variations"
+        ]
+        
+        selected_style = random.choice(prompt_styles)
+        selected_focus = random.choice(focus_areas)
+        
+        prompt = f"""
+        {selected_style} creating auditory discrimination exercises. Generate high-quality word pairs for pronunciation practice.
+        
+        Session ID: {current_time}_{random_seed}
         
         Requirements:
         - Generate exactly 5 word pairs
+        - Include approximately {same_pairs_count} pairs that are identical (same word twice)
+        - Include approximately {different_pairs_count} pairs that are similar-sounding but different
+        - {selected_focus}
         - Use meaningful, common English words (NOT function words like "to", "a", "the")
-        - Include some paris that are identical (same word twice), (it may be 0 to 2 pairs)
-        - Include some pairs that are similar-sounding but different (it may be 0 to 3 pairs)
-        - Focus on minimal pairs that differ by one sound (ship/sheep, pen/pin, etc.)
         - Use words that are at least 3 letters long
         - Avoid proper nouns, abbreviations, or uncommon words
+        - Create fresh, varied examples each time
         
-        Good examples of different pairs:
-        - ship/sheep (i/ee sound difference)
-        - pen/pin (e/i vowel difference)  
-        - cat/cut (a/u vowel difference)
-        - bear/beer (ar/eer ending difference)
-        - thick/sick (th/s consonant difference)
+        Sound difference types to focus on:
+        - Vowel contrasts (long vs short, similar sounds)
+        - Consonant substitutions (voiced vs unvoiced pairs)  
+        - Beginning, middle, or ending sound changes
+        - Minimal pair patterns based on focus area
         
-        Please return ONLY valid JSON in exactly this format:
-        {
+        IMPORTANT: Do NOT use these overused examples: ship/sheep, pen/pin, cat/cut, bear/beer, thick/sick, bat/pat, sing/ring, make/rake
+        
+        Return ONLY valid JSON format:
+        {{
             "word_pairs": [
-                {"word1": "ship", "word2": "ship","answer": "same"},
-                {"word1": "pen", "word2": "pin","answer": "different"},
-                {"word1": "cat", "word2": "cut","answer": "different"},
-                {"word1": "bear", "word2": "beer","answer": "different"},
-                {"word1": "thick", "word2": "thick","answer": "same"}
-          ]
-        }
+                {{"word1": "first_word", "word2": "second_word", "answer": "same_or_different"}},
+                {{"word1": "another_word", "word2": "different_word", "answer": "same_or_different"}}
+            ]
+        }}
         
-        Ensure the answers array correctly indicates "same" or "different" for each pair.
+        Be creative with fresh word combinations! Session: {session_id}
         """  
         return prompt
     
     def get_openai_response(self, prompt: str) -> str:
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[ {"role": "user", "content": prompt}]
+            messages=[ {"role": "user", "content": prompt}],
+            temperature=0.7,  # Balanced creativity with JSON structure
+            top_p=0.8,        # More focused sampling
+            frequency_penalty=0.2,  # Gentle penalty to avoid repetition
+            presence_penalty=0.1    # Light penalty for topic diversity
         )
         return response.choices[0].message.content
+    
+    def clean_json_response(self, response: str) -> str:
+        """Clean and repair common JSON formatting issues."""
+        # Remove markdown code blocks
+        cleaned = response.strip()
+        if cleaned.startswith('```json'):
+            cleaned = cleaned[7:]
+        if cleaned.endswith('```'):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
         
+        # Find the main JSON object boundaries
+        start = cleaned.find('{')
+        if start == -1:
+            return cleaned
+        
+        # Find the matching closing brace
+        brace_count = 0
+        end = start
+        for i, char in enumerate(cleaned[start:], start):
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    end = i + 1
+                    break
+        
+        if end > start:
+            cleaned = cleaned[start:end]
+        
+        # Remove trailing commas before } or ]
+        cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
+        return cleaned
+        
+    
     

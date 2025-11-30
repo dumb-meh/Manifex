@@ -1,8 +1,10 @@
 import os
 import random
+import datetime
 from openai import OpenAI
 from app.services.Adult.phrase_maker.phrase_maker_schema import PhraseMakerResponse, PhraseItem
 import json
+import re
 
 
 class PhraseMaker:
@@ -17,49 +19,106 @@ class PhraseMaker:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        prompt = """
-        You are an English learning coach. Create exactly 5 PHRASES (NOT sentences) for vocabulary building exercises.
+        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        
+        # More specific focus areas
+        focus_areas = [
+            "Everyday conversational phrases about home and family",
+            "Business and workplace communication phrases",
+            "Travel and transportation expressions", 
+            "Health and medical terminology phrases",
+            "Shopping and restaurant phrases",
+            "Academic and educational phrases",
+            "Sports and recreational activity phrases"
+        ]
+        focus = random.choice(focus_areas)
+        
+        # Dynamic phrase types
+        phrase_types = [
+            "Mix prepositional phrases with descriptive adjective phrases",
+            "Focus on verb phrases and adverb combinations", 
+            "Emphasize noun phrases with multiple modifiers",
+            "Include time expressions and location phrases"
+        ]
+        phrase_type = random.choice(phrase_types)
+        
+        prompt = f"""
+        You are an English vocabulary instructor creating fresh phrase-building exercises.
+        
+        Generate 5 COMPLETELY NEW phrases (NOT complete sentences) related to {focus}.
+        
+        IMPORTANT: Avoid these overused examples: "under the bridge", "very important", "in the morning", "red sports car", "extremely difficult"
         
         STRICT REQUIREMENTS:
         - Generate PHRASES only (noun phrases, verb phrases, prepositional phrases)
-        - DO NOT generate complete sentences (no subject + predicate combinations)
-        - Each phrase should be 2-5 words long
-        - Focus on common English phrases that learners should know
-        - NO punctuation, articles should be minimal
-        - Examples of GOOD phrases: "under the bridge", "very important", "in the morning", "red sports car", "extremely difficult"
-        - Examples of BAD phrases (these are sentences): "I go to work", "She is happy", "They were running"
+        - NO complete sentences with subject + verb + object
+        - Each phrase 2-5 words long
+        - {phrase_type}
+        - Be creative and use fresh vocabulary!
         
-        Valid phrase types:
-        - Noun phrases: "big red car", "my best friend" 
-        - Prepositional phrases: "in the park", "under the table"
-        - Adjective phrases: "very tall", "extremely beautiful"
-        - Verb phrases: "running fast", "sleeping peacefully"
-        - Adverb phrases: "very quickly", "quite often"
+        Phrase types to create:
+        - Noun phrases: "[adjective] [noun]" or "[adjective] [adjective] [noun]"
+        - Prepositional phrases: "[preposition] [article] [noun]"
+        - Verb phrases: "[verb] [adverb]" or "[adverb] [verb]"
+        - Descriptive phrases: "[very/quite/extremely] [adjective]"
         
-        Return ONLY a JSON object in this exact format: in the phrase, you will write the phrase and in phrase_options, you will split the phrase into individual words.
-        {
+        Return ONLY valid JSON format:
+        {{
             "phrases": [
-                {"phrase": "under the bridge", "phrase_options": ["under", "the", "bridge"]},
-                {"phrase": "very important", "phrase_options": ["very", "important"]},
-                {"phrase": "red sports car", "phrase_options": ["red", "sports", "car"]},
-                {"phrase": "in the morning", "phrase_options": ["in", "the", "morning"]},
-                {"phrase": "extremely difficult", "phrase_options": ["extremely", "difficult"]}
+                {{"phrase": "fresh_example_phrase", "phrase_options": ["fresh", "example", "phrase"]}},
+                {{"phrase": "another_new_phrase", "phrase_options": ["another", "new", "phrase"]}}
             ]
-        }
+        }}
         
-        Do not include any additional text, explanations, or formatting."""
+        Session: {session_id} | Focus: {focus} | Style: {phrase_type}
+        """
         return prompt
     
     def get_openai_response(self, prompt: str) -> str:
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[ {"role": "user", "content": prompt}]
+            messages=[ {"role": "user", "content": prompt}],
+            temperature=0.7,  # Balanced creativity with JSON structure
+            top_p=0.8,        # More focused sampling
+            frequency_penalty=0.2,  # Gentle penalty to avoid repetition
+            presence_penalty=0.1    # Light penalty for topic diversity
         )
         return response.choices[0].message.content
     
+    def clean_json_response(self, response: str) -> str:
+        """Clean and repair common JSON formatting issues."""
+        cleaned = response.strip()
+        if cleaned.startswith('```json'):
+            cleaned = cleaned[7:]
+        if cleaned.endswith('```'):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+        
+        start = cleaned.find('{')
+        if start == -1:
+            return cleaned
+        
+        brace_count = 0
+        end = start
+        for i, char in enumerate(cleaned[start:], start):
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    end = i + 1
+                    break
+        
+        if end > start:
+            cleaned = cleaned[start:end]
+        
+        cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
+        return cleaned
+    
     def format_response(self, response: str) -> PhraseMakerResponse:
         try:
-            parsed_data = json.loads(response)
+            cleaned_response = self.clean_json_response(response)
+            parsed_data = json.loads(cleaned_response)
             phrases_data = parsed_data.get('phrases', [])
             
             # Convert each phrase dict to PhraseItem
