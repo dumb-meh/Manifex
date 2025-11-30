@@ -93,9 +93,13 @@ async def generate_parallel_audio_files(texts: list, prefix: str = "audio") -> l
             with open(file_path, "wb") as f:
                 f.write(result["audio"].getvalue())
             
-            host = os.getenv("API_HOST", "127.0.0.1")
-            port = os.getenv("API_PORT", "8061")
-            return f"http://{host}:{port}/temp_audio/{filename}"
+            domain = os.getenv("DOMAIN")
+            if domain:
+                return f"{domain}/temp_audio/{filename}"
+            else:
+                host = os.getenv("API_HOST", "127.0.0.1")
+                port = os.getenv("API_PORT", "8061")
+                return f"http://{host}:{port}/temp_audio/{filename}"
             
         except Exception as e:
             print(f"Error creating audio file for {prefix} {index}: {e}")
