@@ -1,7 +1,10 @@
 import os
+import random
+import datetime
 from openai import OpenAI
 from app.services.Adult.word_flash.word_flash_schema import WordFlashRequest, WordFlashResponse
 import json
+import re
 
 
 class WordFlash:
@@ -16,16 +19,20 @@ class WordFlash:
         return self.format_response(response)
     
     def create_prompt(self, input:WordFlashRequest, transcript) -> str:
+        # Add dynamic elements to make output non-deterministic
+        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        tone = random.choice(["encouraging", "neutral", "constructive"])
         prompt = f"""
-        You are an expert speaking practice coach.
-        you will recive the following by:
+        You are an expert speaking practice coach. Session: {session_id}. Tone: {tone}
+        you will receive the following:
         word: {input.word}
         user transcript: {transcript}
-        score each aspect on a scale of 1-10 and provide constructive feedback and suggestions for improvement
+        score each aspect on a scale of 1-10 and provide constructive feedback and suggestions for improvement.
+        Make the feedback concise and vary the phrasing across requests to avoid repetition
         The json response must be exactly in this format
         {{
             "score": 8,
-            "feedback": "One liner feedback such as "great pronunciation","try better next time",
+            "feedback": "Great pronunciation; try to improve clarity",
             "status": "success",
             "message": "Evaluation completed successfully."
 
@@ -37,13 +44,48 @@ class WordFlash:
     def get_openai_response(self, prompt: str) -> str:
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[ {"role": "user", "content": prompt}]
+            messages=[ {"role": "user", "content": prompt}],
+            temperature=0.7,  # Balanced creativity with JSON structure
+            top_p=0.8,        # More focused sampling
+            frequency_penalty=0.2,  # Gentle penalty to avoid repetition
+            presence_penalty=0.1    # Light penalty for topic diversity
         )
         return response.choices[0].message.content
     
+    def clean_json_response(self, response: str) -> str:
+        """Clean and repair common JSON formatting issues."""
+        cleaned = response.strip()
+        if cleaned.startswith('```json'):
+            cleaned = cleaned[7:]
+        if cleaned.endswith('```'):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+        
+        start = cleaned.find('{')
+        if start == -1:
+            return cleaned
+        
+        brace_count = 0
+        end = start
+        for i, char in enumerate(cleaned[start:], start):
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    end = i + 1
+                    break
+        
+        if end > start:
+            cleaned = cleaned[start:end]
+        
+        cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
+        return cleaned
+    
     def format_response(self, response: str) -> WordFlashResponse:
         try:
-            parsed_data = json.loads(response)
+            cleaned_response = self.clean_json_response(response)
+            parsed_data = json.loads(cleaned_response)
             return WordFlashResponse(**parsed_data)
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
@@ -53,7 +95,9 @@ class WordFlash:
             return WordFlashResponse()
         
     def generate_word_flash(self) -> dict:
-        prompt = f"""You are expert speaking coach. In order to improve speaking skills, you will provide a list of 5 challenging words.
+        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        focus = random.choice(["vocabulary-building","phoneme variation","longer multisyllable words","minimal pairs"])
+        prompt = f"""You are expert speaking coach. Session: {session_id}. Focus: {focus} In order to improve speaking skills, you will provide a list of 5 challenging words.
         
         Return ONLY a JSON object in this exact format:
         {{
@@ -63,7 +107,8 @@ class WordFlash:
         Do not include any additional text or formatting."""
         response = self.get_openai_response(prompt)
         try:
-            parsed_response = json.loads(response)
+            cleaned_response = self.clean_json_response(response)
+            parsed_response = json.loads(cleaned_response)
             words = parsed_response.get('words', [])
             
             return {
