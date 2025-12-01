@@ -1,6 +1,4 @@
 import os
-import random
-import datetime
 from openai import OpenAI
 from app.services.Adult.auditory_discrimination.auditory_discrimination_schema import AuditoryDiscriminationResponse
 from app.utils.text_to_speech import generate_parallel_audio_files
@@ -13,6 +11,7 @@ class AuditoryDiscrimination:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.word_cache = []  # Store last 5 word pairs
         
     async def get_auditory_discrimination(self) -> AuditoryDiscriminationResponse:
         prompt = self.create_prompt()
@@ -44,6 +43,11 @@ class AuditoryDiscrimination:
             if not word_pairs:
                 print("Warning: Empty word_pairs detected")
                 return {"word_pairs": []}
+            
+            # Update cache with new word pairs (keep last 5)
+            new_pairs = [(pair["word1"], pair["word2"]) for pair in word_pairs]
+            self.word_cache.extend(new_pairs)
+            self.word_cache = self.word_cache[-5:]
             
             # Generate audio using the original optimized method
             enriched_word_pairs = await self.generate_optimized_audio(word_pairs)
@@ -165,52 +169,29 @@ class AuditoryDiscrimination:
         
     
     def create_prompt(self) -> str:
-        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        random_seed = random.randint(1000, 9999)
-        
-        same_pairs_count = random.randint(0, 2)
-        different_pairs_count = 5 - same_pairs_count
-
-        prompt_styles = [
-            "You are an expert language learning specialist",
-            "You are a professional speech therapist", 
-            "You are an experienced ESL teacher",
-            "You are a linguistics expert"
-        ]
-        
-        focus_areas = [
-            "Focus on minimal pairs that differ by one sound",
-            "Emphasize vowel sound differences",
-            "Include consonant substitution patterns",
-            "Mix vowel and consonant variations"
-        ]
-        
-        selected_style = random.choice(prompt_styles)
-        selected_focus = random.choice(focus_areas)
+        # Create exclusion list from cache
+        excluded_words = "ship/sheep, pen/pin, cat/cut, bear/beer, thick/sick, bat/pat, sing/ring, make/rake"
+        if self.word_cache:
+            cache_words = [f"{pair[0]}/{pair[1]}" for pair in self.word_cache]
+            excluded_words += ", " + ", ".join(cache_words)
         
         prompt = f"""
-        {selected_style} creating auditory discrimination exercises. Generate high-quality word pairs for pronunciation practice.
-        
-        Session ID: {current_time}_{random_seed}
+        You are an expert language learning specialist creating auditory discrimination exercises. Generate high-quality word pairs for pronunciation practice.
         
         Requirements:
         - Generate exactly 5 word pairs
-        - Include approximately {same_pairs_count} pairs that are identical (same word twice)
-        - Include approximately {different_pairs_count} pairs that are similar-sounding but different
-        - {selected_focus}
+        - Mix identical pairs (same word twice) with similar-sounding but different pairs
+        - Focus on minimal pairs that differ by one sound
         - Use meaningful, common English words (NOT function words like "to", "a", "the")
         - Use words that are at least 3 letters long
         - Avoid proper nouns, abbreviations, or uncommon words
-        - Create fresh, varied examples each time
+        
+        CRITICAL: Do NOT use ANY of these word pairs (recently used or overused): {excluded_words}
         
         Sound difference types to focus on:
         - Vowel contrasts (long vs short, similar sounds)
         - Consonant substitutions (voiced vs unvoiced pairs)  
         - Beginning, middle, or ending sound changes
-        - Minimal pair patterns based on focus area
-        
-        IMPORTANT: Do NOT use these overused examples: ship/sheep, pen/pin, cat/cut, bear/beer, thick/sick, bat/pat, sing/ring, make/rake
         
         Return ONLY valid JSON format:
         {{
@@ -219,8 +200,6 @@ class AuditoryDiscrimination:
                 {{"word1": "another_word", "word2": "different_word", "answer": "same_or_different"}}
             ]
         }}
-        
-        Be creative with fresh word combinations! Session: {session_id}
         """  
         return prompt
     
@@ -236,37 +215,29 @@ class AuditoryDiscrimination:
         return response.choices[0].message.content
     
     def clean_json_response(self, response: str) -> str:
-        """Clean and repair common JSON formatting issues."""
-        # Remove markdown code blocks
+        """Simple JSON cleaning."""
+        if not response:
+            return '{"word_pairs": []}'
+        
         cleaned = response.strip()
+        
+        # Remove code block markers
         if cleaned.startswith('```json'):
             cleaned = cleaned[7:]
         if cleaned.endswith('```'):
             cleaned = cleaned[:-3]
+        
         cleaned = cleaned.strip()
         
-        # Find the main JSON object boundaries
+        # Find JSON object bounds
         start = cleaned.find('{')
-        if start == -1:
-            return cleaned
+        end = cleaned.rfind('}') + 1
         
-        # Find the matching closing brace
-        brace_count = 0
-        end = start
-        for i, char in enumerate(cleaned[start:], start):
-            if char == '{':
-                brace_count += 1
-            elif char == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    end = i + 1
-                    break
-        
-        if end > start:
+        if start != -1 and end > start:
             cleaned = cleaned[start:end]
+        else:
+            return '{"word_pairs": []}'
         
-        # Remove trailing commas before } or ]
-        cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
         return cleaned
         
     

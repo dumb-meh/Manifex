@@ -1,6 +1,4 @@
 import os
-import random
-import datetime
 from openai import OpenAI
 from app.services.Adult.phrase_maker.phrase_maker_schema import PhraseMakerResponse, PhraseItem
 import json
@@ -12,6 +10,7 @@ class PhraseMaker:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.phrase_cache = []  # Store last 5 phrases
         
     def get_phrases(self) -> PhraseMakerResponse:
         prompt = self.create_prompt()
@@ -19,41 +18,22 @@ class PhraseMaker:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        
-        # More specific focus areas
-        focus_areas = [
-            "Everyday conversational phrases about home and family",
-            "Business and workplace communication phrases",
-            "Travel and transportation expressions", 
-            "Health and medical terminology phrases",
-            "Shopping and restaurant phrases",
-            "Academic and educational phrases",
-            "Sports and recreational activity phrases"
-        ]
-        focus = random.choice(focus_areas)
-        
-        # Dynamic phrase types
-        phrase_types = [
-            "Mix prepositional phrases with descriptive adjective phrases",
-            "Focus on verb phrases and adverb combinations", 
-            "Emphasize noun phrases with multiple modifiers",
-            "Include time expressions and location phrases"
-        ]
-        phrase_type = random.choice(phrase_types)
+        # Create exclusion list from cache
+        excluded_phrases = "under the bridge, very important, in the morning, red sports car, extremely difficult"
+        if self.phrase_cache:
+            excluded_phrases += ", " + ", ".join(self.phrase_cache)
         
         prompt = f"""
         You are an English vocabulary instructor creating fresh phrase-building exercises.
         
-        Generate 5 COMPLETELY NEW phrases (NOT complete sentences) related to {focus}.
+        Generate 5 COMPLETELY NEW phrases (NOT complete sentences).
         
-        IMPORTANT: Avoid these overused examples: "under the bridge", "very important", "in the morning", "red sports car", "extremely difficult"
+        CRITICAL: Do NOT use ANY of these phrases (recently used or overused): {excluded_phrases}
         
         STRICT REQUIREMENTS:
         - Generate PHRASES only (noun phrases, verb phrases, prepositional phrases)
         - NO complete sentences with subject + verb + object
         - Each phrase 2-5 words long
-        - {phrase_type}
         - Be creative and use fresh vocabulary!
         
         Phrase types to create:
@@ -69,8 +49,6 @@ class PhraseMaker:
                 {{"phrase": "another_new_phrase", "phrase_options": ["another", "new", "phrase"]}}
             ]
         }}
-        
-        Session: {session_id} | Focus: {focus} | Style: {phrase_type}
         """
         return prompt
     
@@ -123,16 +101,20 @@ class PhraseMaker:
             
             # Convert each phrase dict to PhraseItem
             phrase_items = []
+            new_phrases = []
             for phrase_dict in phrases_data:
                 if isinstance(phrase_dict, dict) and 'phrase' in phrase_dict and 'phrase_options' in phrase_dict:
-                    # Shuffle the phrase options for the exercise
-                    shuffled_options = phrase_dict['phrase_options'].copy()
-                    random.shuffle(shuffled_options)
+                    phrase_text = phrase_dict['phrase']
+                    new_phrases.append(phrase_text)
                     
                     phrase_items.append(PhraseItem(
-                        phrase=phrase_dict['phrase'],
-                        phrase_options=shuffled_options
+                        phrase=phrase_text,
+                        phrase_options=phrase_dict['phrase_options']
                     ))
+            
+            # Update cache with new phrases (keep last 5)
+            self.phrase_cache.extend(new_phrases)
+            self.phrase_cache = self.phrase_cache[-5:]
             
             return PhraseMakerResponse(phrases=phrase_items)
             
