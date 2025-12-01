@@ -1,6 +1,4 @@
 import os
-import random
-import datetime
 from openai import OpenAI
 from app.services.Adult.word_flash.word_flash_schema import WordFlashRequest, WordFlashResponse
 import json
@@ -12,6 +10,7 @@ class WordFlash:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.word_cache = []  # Store last 5 words
         
     def word_flash_score(self,input:WordFlashRequest, transcript) -> WordFlashResponse:
         prompt = self.create_prompt(input,transcript)
@@ -19,11 +18,8 @@ class WordFlash:
         return self.format_response(response)
     
     def create_prompt(self, input:WordFlashRequest, transcript) -> str:
-        # Add dynamic elements to make output non-deterministic
-        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        tone = random.choice(["encouraging", "neutral", "constructive"])
         prompt = f"""
-        You are an expert speaking practice coach. Session: {session_id}. Tone: {tone}
+        You are an expert speaking practice coach.
         you will receive the following:
         word: {input.word}
         user transcript: {transcript}
@@ -95,11 +91,14 @@ class WordFlash:
             return WordFlashResponse()
         
     def generate_word_flash(self) -> dict:
-        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        focus = random.choice(["vocabulary-building","phoneme variation","longer multisyllable words","minimal pairs"])
-        prompt = f"""You are expert speaking coach. Session: {session_id}. Focus: {focus} In order to improve speaking skills, you will provide a list of 5 challenging words.
+        # Create exclusion list from cache
+        excluded_words = ""
+        if self.word_cache:
+            excluded_words = f"CRITICAL: Do NOT use ANY of these words (recently used): {', '.join(self.word_cache)}\n\n"
         
-        Return ONLY a JSON object in this exact format:
+        prompt = f"""You are expert speaking coach. In order to improve speaking skills, you will provide a list of 5 challenging words.
+        
+        {excluded_words}Return ONLY a JSON object in this exact format:
         {{
             "words": ["word1", "word2", "word3", "word4", "word5"]
         }}
@@ -110,6 +109,10 @@ class WordFlash:
             cleaned_response = self.clean_json_response(response)
             parsed_response = json.loads(cleaned_response)
             words = parsed_response.get('words', [])
+            
+            # Update cache with new words (keep last 5)
+            self.word_cache.extend(words)
+            self.word_cache = self.word_cache[-5:]
             
             return {
                 "words": words

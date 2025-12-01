@@ -1,6 +1,4 @@
 import os
-import random
-import datetime
 from openai import OpenAI
 from app.services.Adult.word_parts_workshop.word_parts_workshop_schema import WordPartsResponse
 import json
@@ -12,6 +10,7 @@ class WordPartsWorkshop:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.word_cache = []  # Store last 5 words
         
     def get_word_parts(self) -> WordPartsResponse:
         prompt = self.create_prompt()
@@ -19,36 +18,21 @@ class WordPartsWorkshop:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        example_count = random.choice([3, 4, 5])
-        
-        # Dynamic word themes
-        themes = [
-            "academic and educational terms", "medical and health words", 
-            "technology and science terms", "business and professional words",
-            "psychology and social terms", "environmental and nature words"
-        ]
-        theme = random.choice(themes)
-        
-        # Dynamic prefix focus
-        prefix_focus = [
-            "negative prefixes (un-, dis-, in-)", "movement prefixes (pre-, post-, re-)",
-            "quantity prefixes (over-, under-, multi-)", "time prefixes (pre-, post-, ex-)"
-        ]
-        focus = random.choice(prefix_focus)
+        # Create exclusion list from cache
+        excluded_words = "unhappiness, reaction, action, happiness"
+        if self.word_cache:
+            excluded_words += ", " + ", ".join(self.word_cache)
         
         prompt = f"""
         You are a vocabulary building expert creating fresh word parts exercises.
         
-        Generate {example_count} DIFFERENT word part sets focusing on {theme}.
+        Generate 3 DIFFERENT word part sets.
         
-        IMPORTANT: Do NOT use these common examples: "unhappiness", "reaction", "action", "happiness"
+        CRITICAL: Do NOT use ANY of these words (recently used or overused): {excluded_words}
         
         Requirements:
-        - Focus on {focus}
-        - Create word parts from {theme}
-        - Use words students would actually encounter
         - Each set should have prefix, root, and suffix components
+        - Use words students would actually encounter
         - Provide clear, simple meanings for each part
         - Be creative with fresh vocabulary!
         
@@ -61,8 +45,6 @@ class WordPartsWorkshop:
             "root_meaning": ["meaning1", "meaning2", "meaning3"],
             "suffix_meaning": ["meaning1", "meaning2", "meaning3"]
         }}
-        
-        Session: {session_id} | Theme: {theme} | Focus: {focus}
         """  
         return prompt
     

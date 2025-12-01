@@ -1,6 +1,4 @@
 import os
-import random
-import datetime
 from openai import OpenAI
 from app.services.Adult.sentence_builder.sentence_builder_schema import SentenceBuilderResponse, SentenceItem
 import json
@@ -12,6 +10,7 @@ class SentenceBuilder:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.sentence_cache = []  # Store last 5 sentences
         
     def get_sentences(self) -> SentenceBuilderResponse:
         prompt = self.create_prompt()
@@ -19,47 +18,21 @@ class SentenceBuilder:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")  # More unique
-        
-        # Dynamic focus areas
-        grammar_focus = random.choice([
-            "simple present tense with action verbs",
-            "past tense with regular and irregular verbs", 
-            "questions using who, what, where, when, why",
-            "negative statements with don't/doesn't/didn't",
-            "future tense with will/going to",
-            "present continuous with -ing verbs"
-        ])
-        
-        # Dynamic topics for variety
-        topics = [
-            "daily routines", "hobbies and interests", "family activities", 
-            "school life", "weekend plans", "food and cooking",
-            "travel and transportation", "weather and seasons", "work and jobs"
-        ]
-        topic = random.choice(topics)
-        
-        # Dynamic sentence structures
-        structures = [
-            "Mix statements, questions, and commands",
-            "Include both simple and compound sentences",
-            "Vary between short 4-word and longer 8-word sentences",
-            "Balance positive and negative statements"
-        ]
-        structure = random.choice(structures)
+        # Create exclusion list from cache
+        excluded_sentences = "I love reading books, The cat is sleeping, Where are you going?, She runs very fast, We eat dinner together"
+        if self.sentence_cache:
+            excluded_sentences += ", " + ", ".join(self.sentence_cache)
         
         prompt = f"""
         You are an English grammar instructor creating fresh sentence building exercises.
         
-        Generate 5 COMPLETELY NEW sentences about {topic}. 
+        Generate 5 COMPLETELY NEW sentences. 
         
-        IMPORTANT: Avoid these overused examples: "I love reading books", "The cat is sleeping", "Where are you going?", "She runs very fast", "We eat dinner together"
+        CRITICAL: Do NOT use ANY of these sentences (recently used or overused): {excluded_sentences}
         
         Requirements:
-        - Focus on {grammar_focus}
-        - {structure}
+        - Mix different tenses and sentence types
         - Each sentence 4-8 words long
-        - Use vocabulary related to {topic}
         - Be creative and original!
         
         For each sentence provide:
@@ -80,8 +53,6 @@ class SentenceBuilder:
                 {{"sentence": "another example sentence", "sentence_options": ["another", "example", "sentence"]}}
             ]
         }}
-        
-        Session: {session_id} | Grammar: {grammar_focus} | Topic: {topic}
         """
         return prompt
     
@@ -134,8 +105,12 @@ class SentenceBuilder:
             
             # Convert each sentence dict to SentenceItem
             sentence_items = []
+            new_sentences = []
             for sentence_dict in sentences_data:
                 if isinstance(sentence_dict, dict) and 'sentence' in sentence_dict and 'sentence_options' in sentence_dict:
+                    sentence_text = sentence_dict['sentence']
+                    new_sentences.append(sentence_text)
+                    
                     # Clean up sentence options - merge standalone punctuation with previous word
                     options = sentence_dict['sentence_options'].copy()
                     cleaned_options = []
@@ -148,13 +123,14 @@ class SentenceBuilder:
                         else:
                             cleaned_options.append(option)
                     
-                    # Shuffle the cleaned sentence options for the exercise
-                    random.shuffle(cleaned_options)
-                    
                     sentence_items.append(SentenceItem(
-                        sentence=sentence_dict['sentence'],
+                        sentence=sentence_text,
                         sentence_options=cleaned_options
                     ))
+            
+            # Update cache with new sentences (keep last 5)
+            self.sentence_cache.extend(new_sentences)
+            self.sentence_cache = self.sentence_cache[-5:]
             
             return SentenceBuilderResponse(sentences=sentence_items)
             

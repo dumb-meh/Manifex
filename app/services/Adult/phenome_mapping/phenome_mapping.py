@@ -1,6 +1,4 @@
 import os
-import random
-import datetime
 from openai import OpenAI
 from app.services.Adult.phenome_mapping.phenome_mapping_schema import PhenomeMappingResponse, PhenomeMappingItem
 from app.utils.text_to_speech import generate_parallel_audio_files
@@ -13,10 +11,12 @@ class PhenomeMapping:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.exercise_cache = []  # Store last 5 exercises
         
     async def get_phenome_mapping(self) -> PhenomeMappingResponse:
         prompt = self.create_prompt()
         response = self.get_openai_response(prompt)
+        print(f"Raw OpenAI response: {response}")
         
         try:
             cleaned_response = self.clean_json_response(response)
@@ -42,6 +42,11 @@ class PhenomeMapping:
                     options=options
                 ))
             
+            # Update cache with new exercises (keep last 5)
+            new_words = [ex.word for ex in exercises]
+            self.exercise_cache.extend(new_words)
+            self.exercise_cache = self.exercise_cache[-5:]  # Keep only last 5
+            
             return PhenomeMappingResponse(exercises=exercises)
             
         except json.JSONDecodeError as e:
@@ -55,44 +60,27 @@ class PhenomeMapping:
         
     
     def create_prompt(self) -> str:
-        session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")  # More unique with microseconds
-        focus_areas = ["minimal pairs (b/p, d/t, g/k)","consonant clusters (bl, cr, st)","vowel contrasts (i/e, o/u)","digraphs (ch, sh, th)","silent letters","double consonants"]
-        focus = random.choice(focus_areas)
-        
-        # Random word categories to encourage variety
-        word_categories = [
-            "household objects", "body parts", "animals", "food items", "colors", 
-            "weather words", "family terms", "school items", "sports terms", "clothing"
-        ]
-        category = random.choice(word_categories)
-        
-        # Random difficulty instruction
-        difficulties = [
-            "Mix simple 3-4 phoneme words with moderate 5-6 phoneme words",
-            "Focus on 4-5 phoneme words with clear sound segments", 
-            "Include both one and two syllable words",
-            "Vary between simple consonant-vowel patterns and complex clusters"
-        ]
-        difficulty = random.choice(difficulties)
+        # Create exclusion list from cache
+        excluded_words = "should, apple, think, green, catch, cat, dog, run, jump, play"
+        if self.exercise_cache:
+            excluded_words += ", " + ", ".join(self.exercise_cache)
         
         prompt = f"""
         You are an expert phonics instructor creating fresh phoneme mapping exercises. 
 
-        Generate 5 completely NEW and DIFFERENT phoneme mapping exercises focusing on {category}.
+        Generate 5 completely NEW and DIFFERENT phoneme mapping exercises.
         
-        IMPORTANT: Do NOT use these common examples: should, apple, think, green, catch, cat, dog, run, jump, play
+        CRITICAL: Do NOT use ANY of these words (recently used or common): {excluded_words}
         
         Each exercise needs:
-        1. A target word from {category} category (3-6 phonemes)
+        1. A target word (3-6 phonemes)
         2. 6-8 phoneme options mixing correct segments with similar-sounding distractors
         
         Requirements:
-        - {difficulty}
-        - Focus on {focus} 
         - Break words into clear pronounceable segments (like "str-ong" not "s-t-r-o-n-g")
         - Include 3-4 distractor phonemes that sound similar but incorrect
         - Shuffle correct and incorrect options randomly
-        - Use fresh, uncommon words - be creative!
+        - Use fresh, uncommon words - be creative and avoid the excluded list!
         
         Return ONLY valid JSON format:
         {{{{
@@ -101,8 +89,6 @@ class PhenomeMapping:
                 {{"word": "another_word", "options": ["an", "en", "oth", "uth", "er", "ar", "word", "werd"]}}
             ]
         }}}}
-        
-        Session: {session_id} | Focus: {focus} | Category: {category}
         """  
         return prompt
     
