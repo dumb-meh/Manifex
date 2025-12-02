@@ -23,7 +23,7 @@ class WordFlash:
         you will receive the following:
         word: {input.word}
         user transcript: {transcript}
-        score each aspect on a scale of 1-10 and provide constructive feedback and suggestions for improvement.
+        score each aspect on a scale of 1-100 and provide constructive feedback and suggestions for improvement.
         Make the feedback concise and vary the phrasing across requests to avoid repetition
         The json response must be exactly in this format
         {{
@@ -48,40 +48,19 @@ class WordFlash:
         )
         return response.choices[0].message.content
     
-    def clean_json_response(self, response: str) -> str:
-        """Clean and repair common JSON formatting issues."""
-        cleaned = response.strip()
-        if cleaned.startswith('```json'):
-            cleaned = cleaned[7:]
-        if cleaned.endswith('```'):
-            cleaned = cleaned[:-3]
-        cleaned = cleaned.strip()
-        
-        start = cleaned.find('{')
-        if start == -1:
-            return cleaned
-        
-        brace_count = 0
-        end = start
-        for i, char in enumerate(cleaned[start:], start):
-            if char == '{':
-                brace_count += 1
-            elif char == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    end = i + 1
-                    break
-        
-        if end > start:
-            cleaned = cleaned[start:end]
-        
-        cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
-        return cleaned
+
     
     def format_response(self, response: str) -> WordFlashResponse:
         try:
-            cleaned_response = self.clean_json_response(response)
-            parsed_data = json.loads(cleaned_response)
+            # Simple JSON cleaning
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            
+            parsed_data = json.loads(cleaned)
             return WordFlashResponse(**parsed_data)
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
@@ -106,8 +85,15 @@ class WordFlash:
         Do not include any additional text or formatting."""
         response = self.get_openai_response(prompt)
         try:
-            cleaned_response = self.clean_json_response(response)
-            parsed_response = json.loads(cleaned_response)
+            # Simple JSON cleaning
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            
+            parsed_response = json.loads(cleaned)
             words = parsed_response.get('words', [])
             
             # Update cache with new words (keep last 5)
