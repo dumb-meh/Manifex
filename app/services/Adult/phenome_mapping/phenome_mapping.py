@@ -19,8 +19,15 @@ class PhenomeMapping:
         print(f"Raw OpenAI response: {response}")
         
         try:
-            cleaned_response = self.clean_json_response(response)
-            parsed_response = json.loads(cleaned_response)
+            # Simple JSON cleaning
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            
+            parsed_response = json.loads(cleaned)
             exercises_data = parsed_response.get('exercises', [])
             
             # Extract all words for audio generation
@@ -44,8 +51,11 @@ class PhenomeMapping:
             
             # Update cache with new exercises (keep last 5)
             new_words = [ex.word for ex in exercises]
+            print(f"DEBUG: New words to add to cache: {new_words}")
+            print(f"DEBUG: Cache before update: {self.exercise_cache}")
             self.exercise_cache.extend(new_words)
             self.exercise_cache = self.exercise_cache[-5:]  # Keep only last 5
+            print(f"DEBUG: Cache after update: {self.exercise_cache}")
             
             return PhenomeMappingResponse(exercises=exercises)
             
@@ -61,34 +71,38 @@ class PhenomeMapping:
     
     def create_prompt(self) -> str:
         # Create exclusion list from cache
+        print(f"DEBUG: Current exercise_cache: {self.exercise_cache}")
         excluded_words = "should, apple, think, green, catch, cat, dog, run, jump, play"
         if self.exercise_cache:
             excluded_words += ", " + ", ".join(self.exercise_cache)
+        print(f"DEBUG: Excluded words list: {excluded_words}")
         
         prompt = f"""
-        You are an expert phonics instructor creating fresh phoneme mapping exercises. 
-
-        Generate 5 completely NEW and DIFFERENT phoneme mapping exercises.
+        You are an expert phonics instructor creating phoneme mapping exercises.
         
-        CRITICAL: Do NOT use ANY of these words (recently used or common): {excluded_words}
+        Generate 5 words for phoneme mapping practice.
         
-        Each exercise needs:
-        1. A target word (3-6 phonemes)
-        2. 6-8 phoneme options mixing correct segments with similar-sounding distractors
+        CRITICAL: Do NOT use ANY of these words: {excluded_words}
+        
+        For each word, provide:
+        1. The target word
+        2. 6-7 phoneme options that include both correct segments AND similar-sounding distractors
+        
+        Example format:
+        - Word "should" → options: ["sh", "ch", "ou", "ow", "ld", "nd", "s"]
+        - Word "apple" → options: ["ap", "p", "le", "b", "ple", "a", "lp"]
         
         Requirements:
-        - Break words into clear pronounceable segments (like "str-ong" not "s-t-r-o-n-g")
-        - Include 3-4 distractor phonemes that sound similar but incorrect
-        - Shuffle correct and incorrect options randomly
-        - Use fresh, uncommon words - be creative and avoid the excluded list!
+        - Mix correct phonemes with similar-sounding distractors
+        - Use clear, pronounceable segments
+        - Be creative and avoid the excluded words!
         
-        Return ONLY valid JSON format:
-        {{{{
+        Return ONLY this JSON format:
+        {{
             "exercises": [
-                {{"word": "example_word", "options": ["ex", "ek", "am", "em", "ple", "pel", "ing"]}},
-                {{"word": "another_word", "options": ["an", "en", "oth", "uth", "er", "ar", "word", "werd"]}}
+                {{"word": "example", "options": ["ex", "ek", "am", "em", "ple", "pel", "ing"]}}
             ]
-        }}}}
+        }}
         """  
         return prompt
     
@@ -103,77 +117,6 @@ class PhenomeMapping:
         )
         return response.choices[0].message.content
     
-    def clean_json_response(self, response: str) -> str:
-        """Clean and repair common JSON formatting issues."""        
-        if not response:
-            return '{"exercises": []}'
-        
-        cleaned = response.strip()
-        if cleaned.startswith('```json'):
-            cleaned = cleaned[7:]
-        if cleaned.endswith('```'):
-            cleaned = cleaned[:-3]
-        cleaned = cleaned.strip()
-        
-        start = cleaned.find('{')
-        if start == -1:
-            return '{"exercises": []}'
-        
-        brace_count = 0
-        end = start
-        for i, char in enumerate(cleaned[start:], start):
-            if char == '{':
-                brace_count += 1
-            elif char == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    end = i + 1
-                    break
-        
-        if end > start:
-            cleaned = cleaned[start:end]
-        else:
-            # If we can't find proper end, try to construct valid JSON
-            if '"exercises"' in cleaned:
-                # Try to extract just the exercises array
-                exercises_start = cleaned.find('"exercises"')
-                if exercises_start != -1:
-                    array_start = cleaned.find('[', exercises_start)
-                    if array_start != -1:
-                        # Try to find array end
-                        bracket_count = 0
-                        array_end = array_start
-                        for i in range(array_start, len(cleaned)):
-                            if cleaned[i] == '[':
-                                bracket_count += 1
-                            elif cleaned[i] == ']':
-                                bracket_count -= 1
-                                if bracket_count == 0:
-                                    array_end = i + 1
-                                    break
-                        
-                        if bracket_count > 0:
-                            # Add missing closing brackets
-                            cleaned += ']' * bracket_count
-                            array_end = len(cleaned)
-                        
-                        # Extract the array and wrap it
-                        array_content = cleaned[array_start:array_end]
-                        cleaned = f'{{"exercises": {array_content}}}'
-                    else:
-                        cleaned = '{"exercises": []}'
-                else:
-                    cleaned = '{"exercises": []}'
-            else:
-                cleaned = '{"exercises": []}'
-        
-        # Remove trailing commas
-        cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
-        
-        # Fix single quotes to double quotes
-        cleaned = re.sub(r"'([^']*)':", r'"\1":', cleaned)
-        cleaned = re.sub(r":\s*'([^']*)'", r': "\1"', cleaned)
-        
-        return cleaned
+
     
     

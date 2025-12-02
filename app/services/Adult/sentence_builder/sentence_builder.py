@@ -67,40 +67,19 @@ class SentenceBuilder:
         )
         return response.choices[0].message.content
     
-    def clean_json_response(self, response: str) -> str:
-        """Clean and repair common JSON formatting issues."""
-        cleaned = response.strip()
-        if cleaned.startswith('```json'):
-            cleaned = cleaned[7:]
-        if cleaned.endswith('```'):
-            cleaned = cleaned[:-3]
-        cleaned = cleaned.strip()
-        
-        start = cleaned.find('{')
-        if start == -1:
-            return cleaned
-        
-        brace_count = 0
-        end = start
-        for i, char in enumerate(cleaned[start:], start):
-            if char == '{':
-                brace_count += 1
-            elif char == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    end = i + 1
-                    break
-        
-        if end > start:
-            cleaned = cleaned[start:end]
-        
-        cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
-        return cleaned
+
     
     def format_response(self, response: str) -> SentenceBuilderResponse:
         try:
-            cleaned_response = self.clean_json_response(response)
-            parsed_data = json.loads(cleaned_response)
+            # Simple JSON cleaning
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            
+            parsed_data = json.loads(cleaned)
             sentences_data = parsed_data.get('sentences', [])
             
             # Convert each sentence dict to SentenceItem

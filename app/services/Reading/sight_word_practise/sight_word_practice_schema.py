@@ -5,6 +5,8 @@ class SightWordRequest(BaseModel):
     age: str  # Child's age (5-8)
     
 class SightWordResponse(BaseModel):
-    sentence: str
-    sight_words: List[str]
-    age: str 
+    word: str
+    definition: List[str]
+    sentence: str 
+    quiz: List[str]  
+    answer: str

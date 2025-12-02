@@ -20,10 +20,15 @@ class AuditoryDiscrimination:
         print(f"Raw OpenAI response: {response}")
         
         try:
-            # Clean the response using helper method
-            cleaned_response = self.clean_json_response(response)
+            # Simple JSON cleaning
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
             
-            parsed_response = json.loads(cleaned_response)
+            parsed_response = json.loads(cleaned)
             word_pairs_raw = parsed_response.get('word_pairs', [])
             
             # Extract word pairs and answers for flat format
@@ -214,31 +219,7 @@ class AuditoryDiscrimination:
         )
         return response.choices[0].message.content
     
-    def clean_json_response(self, response: str) -> str:
-        """Simple JSON cleaning."""
-        if not response:
-            return '{"word_pairs": []}'
-        
-        cleaned = response.strip()
-        
-        # Remove code block markers
-        if cleaned.startswith('```json'):
-            cleaned = cleaned[7:]
-        if cleaned.endswith('```'):
-            cleaned = cleaned[:-3]
-        
-        cleaned = cleaned.strip()
-        
-        # Find JSON object bounds
-        start = cleaned.find('{')
-        end = cleaned.rfind('}') + 1
-        
-        if start != -1 and end > start:
-            cleaned = cleaned[start:end]
-        else:
-            return '{"word_pairs": []}'
-        
-        return cleaned
+
         
     
     
