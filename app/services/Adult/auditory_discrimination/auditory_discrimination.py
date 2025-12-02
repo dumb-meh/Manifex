@@ -49,10 +49,10 @@ class AuditoryDiscrimination:
                 print("Warning: Empty word_pairs detected")
                 return {"word_pairs": []}
             
-            # Update cache with new word pairs (keep last 5)
-            new_pairs = [(pair["word1"], pair["word2"]) for pair in word_pairs]
-            self.word_cache.extend(new_pairs)
-            self.word_cache = self.word_cache[-5:]
+            # Update cache with new response (keep last 5 responses)
+            response_pairs = [(pair["word1"], pair["word2"]) for pair in word_pairs]
+            self.word_cache.append(response_pairs)  # Store complete response
+            self.word_cache = self.word_cache[-5:]  # Keep only last 5 responses
             
             # Generate audio using the original optimized method
             enriched_word_pairs = await self.generate_optimized_audio(word_pairs)
@@ -174,10 +174,12 @@ class AuditoryDiscrimination:
         
     
     def create_prompt(self) -> str:
-        # Create exclusion list from cache
+        # Create exclusion list from cache (flatten all previous responses)
         excluded_words = "ship/sheep, pen/pin, cat/cut, bear/beer, thick/sick, bat/pat, sing/ring, make/rake"
         if self.word_cache:
-            cache_words = [f"{pair[0]}/{pair[1]}" for pair in self.word_cache]
+            # Flatten all cached responses into one list
+            cached_pairs = [pair for response in self.word_cache for pair in response]
+            cache_words = [f"{pair[0]}/{pair[1]}" for pair in cached_pairs]
             excluded_words += ", " + ", ".join(cache_words)
         
         prompt = f"""
@@ -191,7 +193,9 @@ class AuditoryDiscrimination:
         - Use words that are at least 3 letters long
         - Avoid proper nouns, abbreviations, or uncommon words
         
-        CRITICAL: Do NOT use ANY of these word pairs (recently used or overused): {excluded_words}
+        ⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE SELECTING ANY WORDS: {excluded_words}
+        
+        ❌ ABSOLUTE RULE: NEVER use words from the exclusion list above. Verify EACH word is NOT in the list!
         
         Sound difference types to focus on:
         - Vowel contrasts (long vs short, similar sounds)
