@@ -9,6 +9,7 @@ class ListenSpeak:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.sentence_cache = []  # Cache for last 5 generated sentences
         
     def listen_speak_score(self,input:ListenSpeakRequest, transcript) -> ListenSpeakResponse:
         prompt = self.create_prompt(input,transcript)
@@ -81,35 +82,61 @@ class ListenSpeak:
                 "examples": "The talented musician practiced diligently every day to improve their performance skills significantly"
             }
         
-        prompt = f"""You are an expert speaking coach. Generate 5 age-appropriate sentences for a {age}-year-old child to practice speaking.
+        # Create exclusion list from cache (flatten all previous responses)
+        excluded_sentences = "I like cats, The sun is hot, My dog runs fast, Birds can fly"
+        if self.sentence_cache:
+            # Flatten all cached responses into one list
+            cached_sentences = [sentence for sentences in self.sentence_cache for sentence in sentences]
+            excluded_sentences += ", " + ", ".join(cached_sentences)
+        
+        prompt = f"""⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE CREATING ANY SENTENCES: {excluded_sentences}
+        
+        You are an expert speaking coach. Generate 5 age-appropriate sentences for a {age}-year-old child to practice speaking.
 
-STRICT REQUIREMENTS FOR AGE {age}:
-- Each sentence must be {sentence_guide['length']}
-- Use {sentence_guide['complexity']} vocabulary appropriate for age {age}
-- Focus on clear pronunciation practice, not tongue twisters
-- Use familiar topics: family, animals, food, school, play, colors, etc.
-- Examples: {sentence_guide['examples']}
+        ❌ ABSOLUTE RULE: NEVER use sentences from the exclusion list above. Verify EACH sentence is completely new!
+        
+        STRICT REQUIREMENTS FOR AGE {age}:
+        - Each sentence must be {sentence_guide['length']}
+        - Use {sentence_guide['complexity']} vocabulary appropriate for age {age}
+        - Focus on clear pronunciation practice, not tongue twisters
+        - Use familiar topics: family, animals, food, school, play, colors, etc.
+        - Examples: {sentence_guide['examples']}
 
-AVOID:
-- Tongue twisters or overly complex phrases
-- Advanced vocabulary beyond the child's age level
-- Sentences longer than the specified word count
-- Repetitive alliterative phrases
+        AVOID:
+        - Tongue twisters or overly complex phrases
+        - Advanced vocabulary beyond the child's age level
+        - Sentences longer than the specified word count
+        - Repetitive alliterative phrases
 
-Return ONLY a JSON object in this exact format:
-{{
-    "sentences": ["sentence1", "sentence2", "sentence3", "sentence4", "sentence5"]
-}}
+        Return ONLY a JSON object in this exact format:
+        {{
+            "sentences": ["sentence1", "sentence2", "sentence3", "sentence4", "sentence5"]
+        }}
 
-Make sure each sentence is appropriate for a {age}-year-old's speaking ability."""
+        Make sure each sentence is appropriate for a {age}-year-old's speaking ability."""
         response = self.get_openai_response(prompt)
         try:
-            parsed_response = json.loads(response)
+            # Simple JSON cleaning
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            
+            parsed_response = json.loads(cleaned)
             sentences = parsed_response.get('sentences', [])
+            
+            # Update cache with new response (keep last 5 responses)
+            self.sentence_cache.append(sentences)  # Store complete sentence list
+            self.sentence_cache = self.sentence_cache[-5:]  # Keep only last 5 responses
             
             return {
                 "sentences": sentences
             }
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
+            return {"sentences": []}
+        except Exception as e:
+            print(f"Error creating listen speak response: {e}")
             return {"sentences": []}
