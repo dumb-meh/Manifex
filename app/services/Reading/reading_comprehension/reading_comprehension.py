@@ -9,6 +9,7 @@ load_dotenv()
 class ReadingComprehension:
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.passage_cache = []  # Cache for last 5 generated reading passages
 
     def generate_comprehension(self, age: str) -> ReadingComprehensionResponse:
         """Generate age-appropriate reading comprehension passage with questions and answers"""
@@ -23,19 +24,30 @@ class ReadingComprehension:
         
         guidance = age_guidance.get(age, age_guidance["6"])
         
-        prompt = f"""You are an educational content creator. Generate a complete reading comprehension exercise for {age}-year-old children ({guidance['grade']} level).
+        # Create exclusion list from cache (flatten all previous passages)
+        excluded_topics = "friendly cat, garden adventure, butterfly chase"
+        if self.passage_cache:
+            cached_topics = [passage.get('passage_name', '') for passage in self.passage_cache if passage.get('passage_name')]
+            if cached_topics:
+                excluded_topics += ", " + ", ".join(cached_topics)
+        
+        prompt = f"""⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE CREATING ANY CONTENT: {excluded_topics}
+        
+        You are an educational content creator. Generate a complete reading comprehension exercise for {age}-year-old children ({guidance['grade']} level).
 
-Create:
-1. A short, engaging passage ({guidance['words']} words) that is {guidance['level']} and age-appropriate
-2. A creative title for the passage
-3. Exactly 3 multiple-choice comprehension questions about the passage
-4. For each question, provide exactly 3 options and indicate which one is correct
+        ❌ ABSOLUTE RULE: NEVER use topics or titles from the exclusion list above. Verify your content is completely new!
+        
+        Create:
+        1. A short, engaging passage ({guidance['words']} words) that is {guidance['level']} and age-appropriate
+        2. A creative title for the passage (NOT from exclusion list)
+        3. Exactly 3 multiple-choice comprehension questions about the passage
+        4. For each question, provide exactly 3 options and indicate which one is correct
 
-The passage should:
-- Be interesting and relatable for {age}-year-olds
-- Use appropriate vocabulary for {guidance['grade']} level
-- Have a clear beginning, middle, and end
-- Cover topics kids enjoy (animals, adventures, friends, family, nature, etc.)
+        The passage should:
+        - Be interesting and relatable for {age}-year-olds
+        - Use appropriate vocabulary for {guidance['grade']} level
+        - Have a clear beginning, middle, and end
+        - Cover topics kids enjoy (animals, adventures, friends, family, nature, etc.)
 
 Format your response EXACTLY as JSON:
 {{
@@ -92,6 +104,13 @@ Return ONLY valid JSON, nothing else."""
             
             # Convert to proper schema format
             questions = [QuestionAnswer(**q) for q in data["questions"]]
+            
+            # Update cache with new passage (keep last 5 responses)
+            self.passage_cache.append({
+                'passage_name': data["passage_name"],
+                'text': data["text"]
+            })
+            self.passage_cache = self.passage_cache[-5:]
             
             # Generate image based on the passage
             image_url = self._generate_image(data["passage_name"], data["text"], age)
