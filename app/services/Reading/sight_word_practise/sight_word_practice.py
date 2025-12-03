@@ -9,6 +9,7 @@ load_dotenv()
 class SightWordPractice:
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.sentence_cache = []  # Cache for last 5 generated sentences
         
         # Common sight words organized by age
         self.sight_words_by_age = {
@@ -85,20 +86,29 @@ class SightWordPractice:
         
         complexity = age_guidance.get(age, age_guidance["6"])
         
-        prompt = f"""You are a helpful teacher creating practice sentences for {age}-year-old children.
+        # Create exclusion list from cache (previous sentences)
+        excluded_sentences = "The student can see and learn."
+        if self.sentence_cache:
+            excluded_sentences += ", " + ", ".join(self.sentence_cache)
+            
+        prompt = f"""⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE CREATING ANY SENTENCES: {excluded_sentences}
+        
+        You are a helpful teacher creating practice sentences for {age}-year-old children.
 
-Create a simple, natural, and age-appropriate sentence that includes ALL of these sight words: {words_list}
+        ❌ ABSOLUTE RULE: NEVER create sentences similar to those in the exclusion list above. Verify your sentence is completely new!
+        
+        Create a simple, natural, and age-appropriate sentence that includes ALL of these sight words: {words_list}
 
-Requirements:
-- The sentence MUST use ALL the provided words: {words_list}
-- Make it {complexity}
-- The sentence should be natural and make sense
-- Use correct grammar and punctuation
-- Keep it between 8-15 words long
-- Make it engaging and fun for {age}-year-old kids
-- Use topics and themes that {age}-year-olds can relate to
+        Requirements:
+        - The sentence MUST use ALL the provided words: {words_list}
+        - Make it {complexity}
+        - The sentence should be natural and make sense
+        - Use correct grammar and punctuation
+        - Keep it between 8-15 words long
+        - Make it engaging and fun for {age}-year-old kids
+        - Use topics and themes that {age}-year-olds can relate to
 
-Return ONLY the sentence, nothing else."""
+        Return ONLY the sentence, nothing else."""
 
         try:
             completion = self.client.chat.completions.create(
@@ -121,6 +131,10 @@ Return ONLY the sentence, nothing else."""
                 sentence = sentence[0].upper() + sentence[1:]
             if sentence and sentence[-1] not in '.!?':
                 sentence += '.'
+            
+            # Update cache with new sentence (keep last 5 sentences)
+            self.sentence_cache.append(sentence)
+            self.sentence_cache = self.sentence_cache[-5:]
                 
             return sentence
             

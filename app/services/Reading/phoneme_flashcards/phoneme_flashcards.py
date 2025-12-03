@@ -10,6 +10,7 @@ load_dotenv()
 class PhonemeFlashcards:
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.word_cache = []  # Cache for last 5 generated words
         
         # Age-appropriate word lists (backup) - organized by word length
         self.words_by_age = {
@@ -88,17 +89,26 @@ class PhonemeFlashcards:
             complexity = "moderate to complex"
             examples = "plant, dream, beach, heart, world, light, smile, happy"
         
-        prompt = f"""Generate ONE single {complexity} word that is appropriate for {age}-year-old children learning phonics.
+        # Create exclusion list from cache (flatten all previous responses)
+        excluded_words = examples.replace(", ", ", ")
+        if self.word_cache:
+            cached_words = [word for word in self.word_cache]
+            excluded_words += ", " + ", ".join(cached_words)
+            
+        prompt = f"""⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE SELECTING ANY WORDS: {excluded_words}
+        
+        Generate ONE single {complexity} word that is appropriate for {age}-year-old children learning phonics.
 
-                    Requirements:
-                    - The word MUST be EXACTLY {word_length} long ({target_length} characters only)
-                    - Use common, familiar words that kids of age {age} would know
-                    - Examples of appropriate words: {examples}
-                    - The word should be easy to sound out and phonetically regular
-                    - Return ONLY the word in uppercase, nothing else
-                    - No punctuation, no explanation, just ONE word
-                    - Make sure the word is exactly {target_length} letters long
-                    """
+        ❌ ABSOLUTE RULE: NEVER use words from the exclusion list above. Verify the word is NOT in the list!
+        
+        Requirements:
+        - The word MUST be EXACTLY {word_length} long ({target_length} characters only)
+        - Use common, familiar words that kids of age {age} would know
+        - The word should be easy to sound out and phonetically regular
+        - Return ONLY the word in uppercase, nothing else
+        - No punctuation, no explanation, just ONE word
+        - Make sure the word is exactly {target_length} letters long
+        """
         
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -117,5 +127,9 @@ class PhonemeFlashcards:
         # Validate word length - if not correct, raise exception to use fallback
         if len(word) != target_length:
             raise ValueError(f"Generated word '{word}' is not {target_length} letters long")
+        
+        # Update cache with new word (keep last 5 words)
+        self.word_cache.append(word)
+        self.word_cache = self.word_cache[-5:]
         
         return word
