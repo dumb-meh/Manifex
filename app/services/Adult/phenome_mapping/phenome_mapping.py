@@ -49,12 +49,12 @@ class PhenomeMapping:
                     options=options
                 ))
             
-            # Update cache with new exercises (keep last 5)
-            new_words = [ex.word for ex in exercises]
-            print(f"DEBUG: New words to add to cache: {new_words}")
+            # Update cache with new response (keep last 5 responses)
+            response_words = [ex.word for ex in exercises]
+            print(f"DEBUG: New response words: {response_words}")
             print(f"DEBUG: Cache before update: {self.exercise_cache}")
-            self.exercise_cache.extend(new_words)
-            self.exercise_cache = self.exercise_cache[-5:]  # Keep only last 5
+            self.exercise_cache.append(response_words)  # Store complete response
+            self.exercise_cache = self.exercise_cache[-5:]  # Keep only last 5 responses
             print(f"DEBUG: Cache after update: {self.exercise_cache}")
             
             return PhenomeMappingResponse(exercises=exercises)
@@ -70,19 +70,23 @@ class PhenomeMapping:
         
     
     def create_prompt(self) -> str:
-        # Create exclusion list from cache
+        # Create exclusion list from cache (flatten all previous responses)
         print(f"DEBUG: Current exercise_cache: {self.exercise_cache}")
         excluded_words = "should, apple, think, green, catch, cat, dog, run, jump, play"
         if self.exercise_cache:
-            excluded_words += ", " + ", ".join(self.exercise_cache)
+            # Flatten all cached responses into one list
+            cached_words = [word for response in self.exercise_cache for word in response]
+            excluded_words += ", " + ", ".join(cached_words)
         print(f"DEBUG: Excluded words list: {excluded_words}")
         
         prompt = f"""
+        ⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE SELECTING ANY WORDS: {excluded_words}
+        
         You are an expert phonics instructor creating phoneme mapping exercises.
         
         Generate 5 words for phoneme mapping practice.
         
-        CRITICAL: Do NOT use ANY of these words: {excluded_words}
+        ❌ ABSOLUTE RULE: NEVER use words from the exclusion list above. Verify EACH word is NOT in the list!
         
         For each word, provide:
         1. The target word
@@ -110,10 +114,10 @@ class PhenomeMapping:
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[ {"role": "user", "content": prompt}],
-            temperature=0.7,  # Lower temperature for better JSON structure
-            top_p=0.8,        # More focused sampling
-            frequency_penalty=0.2,  # Gentle penalty to avoid repetition
-            presence_penalty=0.1    # Light penalty for topic diversity
+            temperature=0.7,  
+            top_p=0.8,        
+            frequency_penalty=0.2, 
+            presence_penalty=0.1   
         )
         return response.choices[0].message.content
     

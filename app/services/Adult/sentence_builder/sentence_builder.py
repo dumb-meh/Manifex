@@ -18,17 +18,21 @@ class SentenceBuilder:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        # Create exclusion list from cache
+        # Create exclusion list from cache (flatten all previous responses)
         excluded_sentences = "I love reading books, The cat is sleeping, Where are you going?, She runs very fast, We eat dinner together"
         if self.sentence_cache:
-            excluded_sentences += ", " + ", ".join(self.sentence_cache)
+            # Flatten all cached responses into one list
+            cached_sentences = [sentence for response in self.sentence_cache for sentence in response]
+            excluded_sentences += ", " + ", ".join(cached_sentences)
         
         prompt = f"""
         You are an English grammar instructor creating fresh sentence building exercises.
         
         Generate 5 COMPLETELY NEW sentences. 
         
-        CRITICAL: Do NOT use ANY of these sentences (recently used or overused): {excluded_sentences}
+        ⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE CREATING ANY SENTENCES: {excluded_sentences}
+        
+        ❌ ABSOLUTE RULE: NEVER use sentences from the exclusion list above. Verify EACH sentence is completely new!
         
         Requirements:
         - Mix different tenses and sentence types
@@ -107,9 +111,9 @@ class SentenceBuilder:
                         sentence_options=cleaned_options
                     ))
             
-            # Update cache with new sentences (keep last 5)
-            self.sentence_cache.extend(new_sentences)
-            self.sentence_cache = self.sentence_cache[-5:]
+            # Update cache with new response (keep last 5 responses)
+            self.sentence_cache.append(new_sentences)  # Store complete response
+            self.sentence_cache = self.sentence_cache[-5:]  # Keep only last 5 responses
             
             return SentenceBuilderResponse(sentences=sentence_items)
             

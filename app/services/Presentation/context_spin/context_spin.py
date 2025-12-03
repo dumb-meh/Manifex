@@ -9,6 +9,7 @@ class ContextSpin:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        self.content_cache = []  # Cache for last 5 generated content
         
     def context_spin_score(self,input:ContextSpinRequest, transcript) -> ContextSpinResponse:
         prompt = self.create_prompt(input,transcript)
@@ -53,19 +54,56 @@ class ContextSpin:
             return ContextSpinResponse()
         
     def generate_context_spin(self) -> dict:
-        prompt = f"""You are expert presentation coach. In order to improve spontaneous verbal thinking and vocabulary integration. Give 5 key vocabulary words and 5 random scenarios (e.g., "at a press conference," "during a TED talk," "motivating your team")
+        # Create exclusion list from cache (flatten all previous responses)
+        excluded_words = "motivation, leadership, innovation, success"
+        excluded_scenarios = "wedding reception, press conference, TED talk, team meeting"
+        if self.content_cache:
+            # Flatten all cached responses
+            cached_words = [word for response in self.content_cache for word in response.get('words', [])]
+            cached_scenarios = [response.get('scenario', '') for response in self.content_cache if response.get('scenario')]
+            
+            if cached_words:
+                excluded_words += ", " + ", ".join(cached_words)
+            if cached_scenarios:
+                excluded_scenarios += ", " + ", ".join(cached_scenarios)
+                
+        prompt = f"""⚠️ FIRST: CHECK THESE EXCLUSION LISTS BEFORE SELECTING ANY CONTENT:
+        EXCLUDED WORDS: {excluded_words}
+        EXCLUDED SCENARIOS: {excluded_scenarios}
+        
+        You are expert presentation coach. In order to improve spontaneous verbal thinking and vocabulary integration.
+        
+        ❌ ABSOLUTE RULE: NEVER use words or scenarios from the exclusion lists above. Verify EACH item is completely new!
+        
+        Give 5 key vocabulary words and 1 random scenario for presentation practice.
         
         Return ONLY a JSON object in this exact format:
         {{
             "words": ["word1", "word2", "word3", "word4", "word5"],
-            "scenario": "suppose you are speaking at a wedding reception"
+            "scenario": "suppose you are speaking at [new scenario]"
         }}
         
         Do not include any additional text or formatting."""
         response = self.get_openai_response(prompt)
         try:
-            parsed_response = json.loads(response)
+            # Simple JSON cleaning
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            
+            parsed_response = json.loads(cleaned)
+            
+            # Update cache with new response (keep last 5 responses)
+            self.content_cache.append(parsed_response)  # Store complete response
+            self.content_cache = self.content_cache[-5:]  # Keep only last 5 responses
+            
             return parsed_response
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
-            return {"words": [], "scenarios": []}
+            return {"words": [], "scenario": ""}
+        except Exception as e:
+            print(f"Error creating context spin response: {e}")
+            return {"words": [], "scenario": ""}

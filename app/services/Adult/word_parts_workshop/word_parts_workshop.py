@@ -18,17 +18,21 @@ class WordPartsWorkshop:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        # Create exclusion list from cache
+        # Create exclusion list from cache (flatten all previous responses)
         excluded_words = "unhappiness, reaction, action, happiness"
         if self.word_cache:
-            excluded_words += ", " + ", ".join(self.word_cache)
+            # Flatten all cached responses into one list
+            cached_words = [word for response in self.word_cache for word in response]
+            excluded_words += ", " + ", ".join(cached_words)
         
         prompt = f"""
+        ⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE SELECTING ANY WORDS: {excluded_words}
+        
         You are a vocabulary building expert creating fresh word parts exercises.
         
         Generate 3 DIFFERENT word part sets.
         
-        CRITICAL: Do NOT use ANY of these words (recently used or overused): {excluded_words}
+        ❌ ABSOLUTE RULE: NEVER use words from the exclusion list above. Verify EACH word is NOT in the list!
         
         Requirements:
         - Each set should have prefix, root, and suffix components
@@ -72,6 +76,12 @@ class WordPartsWorkshop:
             cleaned = cleaned.strip()
             
             parsed_data = json.loads(cleaned)
+            
+            # Update cache with new response (keep last 5 responses)
+            response_words = parsed_data.get('prefix', []) + parsed_data.get('root', []) + parsed_data.get('suffix', [])
+            self.word_cache.append(response_words)  # Store complete response
+            self.word_cache = self.word_cache[-5:]  # Keep only last 5 responses
+            
             return WordPartsResponse(
                 prefix=parsed_data.get('prefix', []),
                 root=parsed_data.get('root', []),

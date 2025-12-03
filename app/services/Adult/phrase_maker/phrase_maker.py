@@ -18,17 +18,21 @@ class PhraseMaker:
         return self.format_response(response)
     
     def create_prompt(self) -> str:
-        # Create exclusion list from cache
+        # Create exclusion list from cache (flatten all previous responses)
         excluded_phrases = "under the bridge, very important, in the morning, red sports car, extremely difficult"
         if self.phrase_cache:
-            excluded_phrases += ", " + ", ".join(self.phrase_cache)
+            # Flatten all cached responses into one list
+            cached_phrases = [phrase for response in self.phrase_cache for phrase in response]
+            excluded_phrases += ", " + ", ".join(cached_phrases)
         
         prompt = f"""
         You are an English vocabulary instructor creating fresh phrase-building exercises.
         
         Generate 5 COMPLETELY NEW phrases (NOT complete sentences).
         
-        CRITICAL: Do NOT use ANY of these phrases (recently used or overused): {excluded_phrases}
+        ⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE CREATING ANY PHRASES: {excluded_phrases}
+        
+        ❌ ABSOLUTE RULE: NEVER use phrases from the exclusion list above. Verify EACH phrase is completely new!
         
         STRICT REQUIREMENTS:
         - Generate PHRASES only (noun phrases, verb phrases, prepositional phrases)
@@ -91,9 +95,9 @@ class PhraseMaker:
                         phrase_options=phrase_dict['phrase_options']
                     ))
             
-            # Update cache with new phrases (keep last 5)
-            self.phrase_cache.extend(new_phrases)
-            self.phrase_cache = self.phrase_cache[-5:]
+            # Update cache with new response (keep last 5 responses)
+            self.phrase_cache.append(new_phrases)  # Store complete response
+            self.phrase_cache = self.phrase_cache[-5:]  # Keep only last 5 responses
             
             return PhraseMakerResponse(phrases=phrase_items)
             

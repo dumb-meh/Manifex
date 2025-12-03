@@ -70,10 +70,12 @@ class WordFlash:
             return WordFlashResponse()
         
     def generate_word_flash(self) -> dict:
-        # Create exclusion list from cache
+        # Create exclusion list from cache (flatten all previous responses)
         excluded_words = ""
         if self.word_cache:
-            excluded_words = f"CRITICAL: Do NOT use ANY of these words (recently used): {', '.join(self.word_cache)}\n\n"
+            # Flatten all cached responses into one list
+            cached_words = [word for response in self.word_cache for word in response]
+            excluded_words = f"⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE SELECTING ANY WORDS: {', '.join(cached_words)}\n\n❌ ABSOLUTE RULE: NEVER use words from the exclusion list above. Verify EACH word is NOT in the list!\n\n"
         
         prompt = f"""You are expert speaking coach. In order to improve speaking skills, you will provide a list of 5 challenging words.
         
@@ -96,9 +98,9 @@ class WordFlash:
             parsed_response = json.loads(cleaned)
             words = parsed_response.get('words', [])
             
-            # Update cache with new words (keep last 5)
-            self.word_cache.extend(words)
-            self.word_cache = self.word_cache[-5:]
+            # Update cache with new response (keep last 5 responses)
+            self.word_cache.append(words)  # Store complete response
+            self.word_cache = self.word_cache[-5:]  # Keep only last 5 responses
             
             return {
                 "words": words
