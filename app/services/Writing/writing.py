@@ -16,6 +16,7 @@ class Writing:
             "Art", "Music", "Travel", "Science", "Movies", 
             "Meditation", "Gaming", "Animals"
         ]
+        self.word_cache = {}  # Cache for last 5 generated words per topic
 
     def get_topic(self, topic_request: TopicRequest = None) -> InitialTopicResponse:
         # Use provided topic or randomly select one if not provided
@@ -24,8 +25,24 @@ class Writing:
         else:
             selected_topic = random.choice(self.available_topics)
         
+        # Initialize cache for topic if not exists
+        if selected_topic not in self.word_cache:
+            self.word_cache[selected_topic] = []
+            
+        # Create exclusion list from cache (flatten all previous responses for this topic)
+        excluded_words = "basic, simple, common, related, topic"
+        if self.word_cache[selected_topic]:
+            # Flatten all cached word lists for this topic
+            cached_words = [word for word_list in self.word_cache[selected_topic] for word in word_list]
+            excluded_words += ", " + ", ".join(cached_words)
+        
         # Create prompt to get 5 related words for the selected topic
-        prompt = f"""You are a helpful assistant that provides exactly 5 related words for a given topic. 
+        prompt = f"""⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE SELECTING ANY WORDS: {excluded_words}
+        
+        You are a helpful assistant that provides exactly 5 related words for a given topic.
+        
+        ❌ ABSOLUTE RULE: NEVER use words from the exclusion list above. Verify EACH word is NOT in the list!
+        
         Provide exactly 5 words related to the topic '{selected_topic}'. 
         Return only the 5 words separated by commas, nothing else.
         The words should be simple and commonly used words related to the topic."""
@@ -33,18 +50,37 @@ class Writing:
         # Get AI response for related words
         response = self.get_openai_response(prompt, selected_topic)
         
-        # Parse the response to extract the 5 words
-        related_words = [word.strip().rstrip('.') for word in response.split(',')]
-        
-        # Ensure we have exactly 5 words
-        if len(related_words) > 5:
-            related_words = related_words[:5]
-        elif len(related_words) < 5:
-            # If we get fewer than 5 words, pad with generic topic-related words
-            while len(related_words) < 5:
-                related_words.append(f"{selected_topic.lower()}_related")
-        
-        return InitialTopicResponse(topic=selected_topic, related_words=related_words)
+        try:
+            # Simple cleaning and parsing
+            cleaned = response.strip()
+            if cleaned.startswith('```'):
+                cleaned = cleaned.split('\n')[1] if '\n' in cleaned else cleaned[3:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            
+            # Parse the response to extract the 5 words
+            related_words = [word.strip().rstrip('.').rstrip(',') for word in cleaned.split(',')]
+            
+            # Ensure we have exactly 5 words
+            if len(related_words) > 5:
+                related_words = related_words[:5]
+            elif len(related_words) < 5:
+                # If we get fewer than 5 words, pad with generic topic-related words
+                while len(related_words) < 5:
+                    related_words.append(f"{selected_topic.lower()}_word_{len(related_words)}")
+            
+            # Update cache with new response (keep last 5 responses per topic)
+            self.word_cache[selected_topic].append(related_words)  # Store complete word list
+            self.word_cache[selected_topic] = self.word_cache[selected_topic][-5:]  # Keep only last 5 responses
+            
+            return InitialTopicResponse(topic=selected_topic, related_words=related_words)
+            
+        except Exception as e:
+            print(f"Error processing writing topic response: {e}")
+            # Fallback with generic words if parsing fails
+            fallback_words = [f"{selected_topic.lower()}_word_{i+1}" for i in range(5)]
+            return InitialTopicResponse(topic=selected_topic, related_words=fallback_words)
     
     def get_writing_score(self, input_data: FinalScoreRequest) -> FinalScoreResponse:
         # Analyze word usage
