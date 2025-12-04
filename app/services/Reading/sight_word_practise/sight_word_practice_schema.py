@@ -2,11 +2,14 @@ from pydantic import BaseModel
 from typing import List
 
 class SightWordRequest(BaseModel):
-    age: str  # Child's age (5-8)
+    age: str
     
-class SightWordResponse(BaseModel):
+class SightWordItem(BaseModel):
     word: str
     definition: List[str]
     sentence: str 
     quiz: List[str]  
     answer: str
+    
+class SightWordResponse(BaseModel):
+    response: List[SightWordItem] = []
