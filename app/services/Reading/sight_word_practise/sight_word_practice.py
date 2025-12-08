@@ -9,21 +9,15 @@ load_dotenv()
 class SightWordPractice:
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.sentence_cache = []  # Cache for last 5 generated sentences
-        
-        # Cache for sight words to prevent repetition
-        self.sight_word_cache = []  # Cache for last 5 generated sight word sets
+        self.sentence_cache = []     
+        self.sight_word_cache = [] 
     
     def generate_sentence(self, request: SightWordRequest) -> SightWordResponse:
         """Generate sight word items with definitions, sentences, and quiz questions"""
         
-        # Validate and get age
-        age = str(request.age) if request.age else "6"
-        
-        # Generate 5 age-appropriate sight words using AI
+        age = str(request.age) if request.age else "6"      
         selected_words = self._generate_sight_words_with_ai(age)
         
-        # Generate sight word items using OpenAI
         sight_word_items = self._generate_sight_word_items_with_ai(selected_words, age)
         
         return SightWordResponse(response=sight_word_items)
@@ -31,7 +25,6 @@ class SightWordPractice:
     def _generate_sight_words_with_ai(self, age: str) -> list:
         """Generate 5 age-appropriate sight words using AI"""
         
-        # Age-appropriate sight word complexity levels
         age_int = int(age)
         if age_int <= 6:
             complexity = "very basic high-frequency words (the, and, a, to, in, is, you, that, it, he)"
@@ -49,10 +42,8 @@ class SightWordPractice:
             complexity = "sophisticated sight words (although, environment, necessary, organization, opportunity, immediately, definitely, experience)"
             level = "high school"
         
-        # Create exclusion list from cache
         excluded_words = "basic, example, word, sight"
         if self.sight_word_cache:
-            # Flatten all cached sight words
             cached_words = [word for word_list in self.sight_word_cache for word in word_list]
             excluded_words += ", " + ", ".join(cached_words)
             
@@ -90,7 +81,6 @@ class SightWordPractice:
             
             content = completion.choices[0].message.content.strip()
             
-            # Clean JSON response
             if content.startswith('```json'):
                 content = content[7:]
             if content.startswith('```'):
@@ -99,16 +89,13 @@ class SightWordPractice:
                 content = content[:-3]
             content = content.strip()
             
-            # Parse JSON response
             import json
             data = json.loads(content)
             sight_words = data.get('words', [])
-            
-            # Ensure we have exactly 5 words
+
             if len(sight_words) != 5:
                 raise ValueError(f"Expected 5 words, got {len(sight_words)}")
-            
-            # Update cache with new sight words (keep last 5 sets)
+
             self.sight_word_cache.append(sight_words)
             self.sight_word_cache = self.sight_word_cache[-5:]
             
@@ -116,33 +103,13 @@ class SightWordPractice:
             
         except Exception as e:
             print(f"Error generating sight words: {e}")
-            # Fallback words by age if AI fails
-            fallback_words = {
-                "5-6": ["the", "and", "a", "to", "in"],
-                "7-9": ["was", "for", "on", "are", "as"], 
-                "10-12": ["each", "which", "how", "their", "about"],
-                "13-15": ["through", "because", "important", "different", "thought"],
-                "16-18": ["although", "environment", "necessary", "organization", "opportunity"]
-            }
-            
-            # Select appropriate fallback based on age
-            if age_int <= 6:
-                return fallback_words["5-6"]
-            elif age_int <= 9:
-                return fallback_words["7-9"]
-            elif age_int <= 12:
-                return fallback_words["10-12"]
-            elif age_int <= 15:
-                return fallback_words["13-15"]
-            else:
-                return fallback_words["16-18"]
+            raise
 
     def _generate_sight_word_items_with_ai(self, sight_words: list, age: str) -> list:
         """Use OpenAI to generate comprehensive sight word items with definitions, sentences, and quizzes"""
         
         words_list = ", ".join(sight_words)
         
-        # Age-appropriate complexity levels
         age_guidance = {
             "5": "very simple definitions and sentences for 5-year-olds (kindergarten level)",
             "6": "simple definitions and sentences for 6-year-olds (1st grade level)",
@@ -152,7 +119,6 @@ class SightWordPractice:
         
         complexity = age_guidance.get(age, age_guidance["6"])
         
-        # Create exclusion list from cache
         excluded_content = "basic examples, simple sentences"
         if self.sentence_cache:
             excluded_content += ", " + ", ".join(self.sentence_cache)
@@ -169,7 +135,7 @@ class SightWordPractice:
         1. A simple definition (2-5 words) appropriate for {age}-year-olds
         2. An example sentence using the word
         3. A quiz with 3 sentences where the sight word is replaced with a blank (_____). Only ONE sentence should make sense with the sight word.
-        4. Specify which sentence (1, 2, or 3) is the correct answer
+        4. For the answer field, provide the COMPLETE correct sentence with the sight word filled in (not just the number)
         
         Make it {complexity}
         
@@ -185,7 +151,7 @@ class SightWordPractice:
                         "I like _____ eat apples.",
                         "She can _____ very well."
                     ],
-                    "answer": "1"
+                    "answer": "the dog is running fast."
                 }}
             ]
         }}
@@ -206,7 +172,6 @@ class SightWordPractice:
             
             content = completion.choices[0].message.content.strip()
             
-            # Clean JSON response
             if content.startswith('```json'):
                 content = content[7:]
             if content.startswith('```'):
@@ -215,16 +180,13 @@ class SightWordPractice:
                 content = content[:-3]
             content = content.strip()
             
-            # Parse JSON response
             import json
             data = json.loads(content)
-            
-            # Convert to SightWordItem objects
+
             sight_word_items = []
             for item_data in data.get('items', []):
                 sight_word_items.append(SightWordItem(**item_data))
             
-            # Update cache with generated content (keep last 5)
             cache_content = [item.sentence for item in sight_word_items]
             self.sentence_cache.extend(cache_content)
             self.sentence_cache = self.sentence_cache[-5:]
@@ -233,18 +195,4 @@ class SightWordPractice:
             
         except Exception as e:
             print(f"Error generating sight word items: {e}")
-            # Fallback: create basic items
-            fallback_items = []
-            for word in sight_words:
-                fallback_items.append(SightWordItem(
-                    word=word,
-                    definition=[f"a common word"],
-                    sentence=f"I can see {word} word.",
-                    quiz=[
-                        f"_____ is a sight word.",
-                        f"I like _____ very much.",
-                        f"_____ dog is running."
-                    ],
-                    answer="1"
-                ))
-            return fallback_items
+            raise
