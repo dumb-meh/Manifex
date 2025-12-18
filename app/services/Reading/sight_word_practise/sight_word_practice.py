@@ -122,12 +122,12 @@ class SightWordPractice:
             base_info = base_items[i]
             
             # Generate correct sentence using the word and wrong sentences avoiding the word
-            correct_sentence = self._generate_correct_sentence(word, age)
+            correct_sentence_blank, correct_sentence_filled = self._generate_correct_sentence(word, age)
             wrong_sentences = self._generate_wrong_sentences_avoiding_word(word, age, 2)
             
-            # Randomly shuffle quiz options
+            # Randomly shuffle quiz options (use blank version for quiz)
             import random
-            quiz = [correct_sentence] + wrong_sentences
+            quiz = [correct_sentence_blank] + wrong_sentences
             random.shuffle(quiz)
             
             # Create the final item
@@ -137,7 +137,7 @@ class SightWordPractice:
                 definition=base_info['definition'],
                 sentence=base_info['example_sentence'],
                 quiz=quiz,
-                answer=correct_sentence
+                answer=correct_sentence_filled
             ))
         
         # Cache sentences
@@ -240,9 +240,10 @@ Create sentence for word: {word}"""
             
             import json
             data = json.loads(content)
-            # Return the sentence with the word filled in
             sentence_with_blank = data.get('sentence', '')
-            return sentence_with_blank.replace('_____', word)
+            sentence_filled = sentence_with_blank.replace('_____', word)
+            # Return both versions: (with blank for quiz, filled for answer)
+            return sentence_with_blank, sentence_filled
             
         except Exception as e:
             print(f"Error generating correct sentence: {e}")
@@ -261,7 +262,7 @@ The sentences should need words like: am, is, are, go, run, jump, sit, eat, like
 DO NOT create sentences where "{word_to_avoid}" would fit in the blank!
 
 Example if avoiding "was":
-✓ GOOD: "She _____ very happy." (needs "is", not "was")
+✗ BAD: "She _____ very happy." (this can work both for "is" and "was" - DO NOT create this!)
 ✓ GOOD: "I _____ to play outside." (needs "like", not "was")
 ✗ BAD: "She _____ tired yesterday." (this needs "was" - DO NOT create this!)
 
