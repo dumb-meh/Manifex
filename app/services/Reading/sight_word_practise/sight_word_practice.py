@@ -112,69 +112,74 @@ class SightWordPractice:
     def _generate_sight_word_items_with_ai(self, sight_words: list, age: str, audio_urls: list) -> list:
         """Use OpenAI to generate comprehensive sight word items with definitions, sentences, and quizzes"""
         
+        # Step 1: Generate base info (definition + example sentence) for each sight word
+        base_items = self._generate_base_info(sight_words, age)
+        
+        # Step 2: For each word, generate correct quiz sentence and wrong options in parallel
+        sight_word_items = []
+        
+        for i, word in enumerate(sight_words):
+            base_info = base_items[i]
+            
+            # Generate correct sentence using the word and wrong sentences avoiding the word
+            correct_sentence = self._generate_correct_sentence(word, age)
+            wrong_sentences = self._generate_wrong_sentences_avoiding_word(word, age, 2)
+            
+            # Randomly shuffle quiz options
+            import random
+            quiz = [correct_sentence] + wrong_sentences
+            random.shuffle(quiz)
+            
+            # Create the final item
+            sight_word_items.append(SightWordItem(
+                word=word,
+                audio_url=audio_urls[i] if i < len(audio_urls) else "",
+                definition=base_info['definition'],
+                sentence=base_info['example_sentence'],
+                quiz=quiz,
+                answer=correct_sentence
+            ))
+        
+        # Cache sentences
+        cache_content = [item.sentence for item in sight_word_items]
+        self.sentence_cache.extend(cache_content)
+        self.sentence_cache = self.sentence_cache[-25:]
+        
+        return sight_word_items
+    
+    def _generate_base_info(self, sight_words: list, age: str) -> list:
+        """Generate definition and example sentence for each sight word"""
+        
         words_list = ", ".join(sight_words)
         
-        age_guidance = {
-            "5": "very simple definitions and sentences for 5-year-olds (kindergarten level)",
-            "6": "simple definitions and sentences for 6-year-olds (1st grade level)",
-            "7": "moderately simple definitions and sentences for 7-year-olds (2nd grade level)",
-            "8": "slightly more complex definitions and sentences for 8-year-olds (3rd grade level)"
-        }
-        
-        complexity = age_guidance.get(age, age_guidance["6"])
-        
-        excluded_content = "basic examples, simple sentences"
-        if self.sentence_cache:
-            excluded_content += ", " + ", ".join(self.sentence_cache)
-            
-        prompt = f"""⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE CREATING ANY CONTENT: {excluded_content}
-        
-        You are a helpful teacher creating sight word exercises for {age}-year-old children.
+        prompt = f"""For each sight word: {words_list}
 
-        ❌ ABSOLUTE RULE: NEVER create content similar to the exclusion list above. Make everything completely new!
-        
-        For each of these sight words: {words_list}
-        
-        Create:
-        1. A simple definition (2-5 words) appropriate for {age}-year-olds
-        2. An example sentence using the word
-        3. A quiz with 3 sentences where the sight word is replaced with a blank (_____)
-           ⚠️ CRITICAL: Only ONE sentence should be grammatically correct with the sight word filled in.
-           ⚠️ The other TWO sentences MUST be grammatically INCORRECT or nonsensical with the sight word.
-           ⚠️ Make sure the incorrect options would NOT make sense even if the word was filled in.
-        4. For the answer field, provide the COMPLETE correct sentence with the sight word filled in
-        
-        Make it {complexity}
-        
-        Return ONLY valid JSON in this exact format:
-        {{
-            "items": [
-                {{
-                    "word": "the",
-                    "definition": ["a word that points to something"],
-                    "sentence": "The cat is sleeping.",
-                    "quiz": [
-                        "_____ dog is running fast.",
-                        "I like running _____ fast.",
-                        "She _____ very happy today."
-                    ],
-                    "answer": "the dog is running fast."
-                }}
-            ]
-        }}
-        
-        Create one item for each word: {words_list}
-        """
+Create:
+1. A simple definition (2-5 words) appropriate for {age}-year-old children
+2. An example sentence using the word
+
+Return JSON:
+{{
+  "items": [
+    {{
+      "word": "the",
+      "definition": ["points to something"],
+      "example_sentence": "The cat is sleeping."
+    }}
+  ]
+}}
+
+Create items for: {words_list}"""
 
         try:
             completion = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are an educational content creator who generates sight word exercises for children. Always respond with valid JSON only."},
+                    {"role": "system", "content": "You are an educational content creator. Always respond with valid JSON only."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.8,
-                max_tokens=800
+                temperature=0.7,
+                max_tokens=500
             )
             
             content = completion.choices[0].message.content.strip()
@@ -189,19 +194,112 @@ class SightWordPractice:
             
             import json
             data = json.loads(content)
-
-            sight_word_items = []
-            for i, item_data in enumerate(data.get('items', [])):
-                # Add audio URL to item
-                item_data['audio_url'] = audio_urls[i] if i < len(audio_urls) else ""
-                sight_word_items.append(SightWordItem(**item_data))
-            
-            cache_content = [item.sentence for item in sight_word_items]
-            self.sentence_cache.extend(cache_content)
-            self.sentence_cache = self.sentence_cache[-5:]
-                
-            return sight_word_items
+            return data.get('items', [])
             
         except Exception as e:
-            print(f"Error generating sight word items: {e}")
+            print(f"Error generating base info: {e}")
+            raise
+    
+    def _generate_correct_sentence(self, word: str, age: str) -> str:
+        """Generate a quiz sentence using the specific sight word"""
+        
+        prompt = f"""Create ONE simple sentence for {age}-year-old children that uses the word "{word}".
+
+The sentence should have a blank _____ where "{word}" goes.
+
+Example for word "was":
+"She _____ happy yesterday."
+
+Return JSON:
+{{
+  "sentence": "She _____ happy yesterday."
+}}
+
+Create sentence for word: {word}"""
+
+        try:
+            completion = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are an educational content creator. Always respond with valid JSON only."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=100
+            )
+            
+            content = completion.choices[0].message.content.strip()
+            
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.startswith('```'):
+                content = content[3:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            import json
+            data = json.loads(content)
+            # Return the sentence with the word filled in
+            sentence_with_blank = data.get('sentence', '')
+            return sentence_with_blank.replace('_____', word)
+            
+        except Exception as e:
+            print(f"Error generating correct sentence: {e}")
+            raise
+    
+    def _generate_wrong_sentences_avoiding_word(self, word_to_avoid: str, age: str, count: int) -> list:
+        """Generate sentences that specifically DO NOT use the given sight word"""
+        
+        prompt = f"""Generate {count} simple sentences for {age}-year-old children.
+
+Each sentence should have _____ in place of a word.
+
+🚨 CRITICAL: The blank should be for a word that is NOT "{word_to_avoid}".
+The sentences should need words like: am, is, are, go, run, jump, sit, eat, like, want, etc.
+
+DO NOT create sentences where "{word_to_avoid}" would fit in the blank!
+
+Example if avoiding "was":
+✓ GOOD: "She _____ very happy." (needs "is", not "was")
+✓ GOOD: "I _____ to play outside." (needs "like", not "was")
+✗ BAD: "She _____ tired yesterday." (this needs "was" - DO NOT create this!)
+
+Return JSON:
+{{
+  "sentences": [
+    "She _____ very happy.",
+    "I _____ to play outside."
+  ]
+}}
+
+Generate {count} sentences that DO NOT need the word "{word_to_avoid}"."""
+
+        try:
+            completion = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are an educational content creator. Always respond with valid JSON only."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.8,
+                max_tokens=200
+            )
+            
+            content = completion.choices[0].message.content.strip()
+            
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.startswith('```'):
+                content = content[3:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            import json
+            data = json.loads(content)
+            return data.get('sentences', [])
+            
+        except Exception as e:
+            print(f"Error generating wrong sentences: {e}")
             raise
