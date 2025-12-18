@@ -6,6 +6,7 @@ class SightWordRequest(BaseModel):
     
 class SightWordItem(BaseModel):
     word: str
+    audio_url:str
     definition: List[str]
     sentence: str 
     quiz: List[str]  
