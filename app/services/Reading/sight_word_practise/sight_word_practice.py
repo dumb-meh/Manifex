@@ -3,6 +3,7 @@ import openai
 import random
 from dotenv import load_dotenv
 from .sight_word_practice_schema import SightWordRequest, SightWordResponse, SightWordItem
+from app.utils.text_to_speech import generate_parallel_audio_files
 
 load_dotenv()
 
@@ -12,13 +13,16 @@ class SightWordPractice:
         self.sentence_cache = []     
         self.sight_word_cache = [] 
     
-    def generate_sentence(self, request: SightWordRequest) -> SightWordResponse:
+    async def generate_sentence(self, request: SightWordRequest) -> SightWordResponse:
         """Generate sight word items with definitions, sentences, and quiz questions"""
         
         age = str(request.age) if request.age else "6"      
         selected_words = self._generate_sight_words_with_ai(age)
         
-        sight_word_items = self._generate_sight_word_items_with_ai(selected_words, age)
+        # Generate audio for each sight word
+        audio_urls = await generate_parallel_audio_files(selected_words, prefix="sight_word")
+        
+        sight_word_items = self._generate_sight_word_items_with_ai(selected_words, age, audio_urls)
         
         return SightWordResponse(response=sight_word_items)
 
@@ -105,7 +109,7 @@ class SightWordPractice:
             print(f"Error generating sight words: {e}")
             raise
 
-    def _generate_sight_word_items_with_ai(self, sight_words: list, age: str) -> list:
+    def _generate_sight_word_items_with_ai(self, sight_words: list, age: str, audio_urls: list) -> list:
         """Use OpenAI to generate comprehensive sight word items with definitions, sentences, and quizzes"""
         
         words_list = ", ".join(sight_words)
@@ -134,8 +138,11 @@ class SightWordPractice:
         Create:
         1. A simple definition (2-5 words) appropriate for {age}-year-olds
         2. An example sentence using the word
-        3. A quiz with 3 sentences where the sight word is replaced with a blank (_____). Only ONE sentence should make sense with the sight word.
-        4. For the answer field, provide the COMPLETE correct sentence with the sight word filled in (not just the number)
+        3. A quiz with 3 sentences where the sight word is replaced with a blank (_____)
+           ⚠️ CRITICAL: Only ONE sentence should be grammatically correct with the sight word filled in.
+           ⚠️ The other TWO sentences MUST be grammatically INCORRECT or nonsensical with the sight word.
+           ⚠️ Make sure the incorrect options would NOT make sense even if the word was filled in.
+        4. For the answer field, provide the COMPLETE correct sentence with the sight word filled in
         
         Make it {complexity}
         
@@ -148,8 +155,8 @@ class SightWordPractice:
                     "sentence": "The cat is sleeping.",
                     "quiz": [
                         "_____ dog is running fast.",
-                        "I like _____ eat apples.",
-                        "She can _____ very well."
+                        "I like running _____ fast.",
+                        "She _____ very happy today."
                     ],
                     "answer": "the dog is running fast."
                 }}
@@ -184,7 +191,9 @@ class SightWordPractice:
             data = json.loads(content)
 
             sight_word_items = []
-            for item_data in data.get('items', []):
+            for i, item_data in enumerate(data.get('items', [])):
+                # Add audio URL to item
+                item_data['audio_url'] = audio_urls[i] if i < len(audio_urls) else ""
                 sight_word_items.append(SightWordItem(**item_data))
             
             cache_content = [item.sentence for item in sight_word_items]

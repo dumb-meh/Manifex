@@ -12,7 +12,7 @@ async def get_sightwords(request_data: SightWordRequest = Body(...), user_id: st
         raise HTTPException(status_code=401, detail="Invalid auth token")
     
     try:
-        response = sight_word_service.generate_sentence(request_data)
+        response = await sight_word_service.generate_sentence(request_data)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
