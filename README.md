@@ -24,16 +24,46 @@
 
 ---
 
+
 ## ✨ Features
 
-- 🤖 **AI-Powered Learning** - Leverages OpenAI's GPT models for intelligent content generation
-- 🎯 **Multi-Category Learning** - Covers Reading, Writing, Speaking, Presentation, and Adult learning
-- 🔊 **Speech Integration** - Text-to-speech and speech-to-text capabilities
-- 📱 **RESTful API** - Clean, well-documented REST API endpoints
-- 🐳 **Docker Ready** - Fully containerized for easy deployment
-- 🔄 **Auto-cleanup** - Automatic temporary file management
-- 📊 **Interactive Docs** - Built-in Swagger UI documentation
-- 🌐 **CORS Enabled** - Ready for cross-origin requests
+### 👔 Adult Learning
+- ⚡ Word Flash: Quick word recognition drills
+- 🧩 Word Parts Workshop: Learn prefixes, suffixes, and roots
+- 📝 Sentence Builder: Construct complex sentences
+- 💭 Phrase Maker: Create effective phrases
+- 🎧 Auditory Discrimination: Distinguish similar sounds
+- 🗺️ Phoneme Mapping: Map sounds to letters
+
+### 🎤 Presentation
+- 💪 Power Words: Learn impactful vocabulary
+- 🔗 Flow Chain: Build coherent presentations
+- 🎯 Context Spin: Adapt content to different contexts
+- 🎓 Precision Drill: Practice precise communication
+
+### 📖 Reading
+- 📝 Sight Word Practice: Practice common sight words
+- 📚 Reading Comprehension: Improve reading comprehension skills
+- 🔤 Phoneme Flashcards: Learn phonemes through flashcards
+
+### ✍️ Writing
+- ✏️ Writing Practice: AI-powered writing assistance and scoring
+
+### 🗣️ Speaking
+- 👂 Listen & Speak: Practice listening and speaking
+- 🔄 Phrase Repeat: Repeat and master phrases
+- 🗨️ Pronunciation: Improve pronunciation skills
+- 💬 Vocabulary Challenge: Expand your vocabulary
+
+### 🔊 Speech Integration
+- Text-to-speech and speech-to-text capabilities
+
+### 🛠️ Platform Features
+- RESTful API with clean, well-documented endpoints
+- Docker-ready for easy deployment
+- Automatic temporary file management
+- Built-in Swagger UI and ReDoc documentation
+- CORS enabled for cross-origin requests
 
 ---
 
