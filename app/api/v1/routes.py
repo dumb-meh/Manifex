@@ -19,6 +19,7 @@ from app.services.Adult.sentence_builder.sentence_builder_route import router as
 from app.services.Adult.phrase_maker.phrase_maker_route import router as phrase_maker_router
 from app.services.Adult.auditory_discrimination.auditory_discrimination_route import router as auditory_discrimination_router
 from app.services.Adult.phenome_mapping.phenome_mapping_route import router as phenome_mapping_router
+from app.services.Hand_Writing.hand_writing_route import router as hand_writing_router
 
 api_router = APIRouter()
 
@@ -45,3 +46,5 @@ api_router.include_router(sentence_builder_router, prefix="/adult/sentence-build
 api_router.include_router(phrase_maker_router, prefix="/adult/phrase-maker", tags=["adult"])
 api_router.include_router(auditory_discrimination_router, prefix="/adult/auditory-discrimination", tags=["adult"])
 api_router.include_router(phenome_mapping_router, prefix="/adult/phenome-mapping", tags=["adult"])
+
+api_router.include_router(hand_writing_router, prefix="/handwriting", tags=["handwriting"])
