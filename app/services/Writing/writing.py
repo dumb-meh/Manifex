@@ -14,10 +14,30 @@ class Writing:
         self.available_topics = [
             "Sports", "Dance", "Cooking", "Food", "Nature", 
             "Art", "Music", "Travel", "Science", "Movies", 
-            "Meditation", "Gaming", "Animals"
+            "Meditation", "Gaming", "Animals", "Family", "Friends",
+            "Toys", "Playground", "School", "Colors", "Shapes",
+            "Numbers", "Letters", "Birthday", "Holidays", "Seasons",
+            "Weather", "Flowers", "Trees", "Birds", "Insects",
+            "Ocean", "Space", "Dinosaurs", "Fairy Tales", "Books",
+            "Stories", "Superheroes", "Pirates", "Princesses", "Robots",
+            "Cars", "Trains", "Airplanes", "Boats", "Bikes",
+            "Pets", "Farm", "Zoo", "Jungle", "Forest",
+            "Beach", "Park", "Home", "Bedroom", "Kitchen",
+            "Garden", "Clothes", "Shoes", "Hats", "Fruits",
+            "Vegetables", "Snacks", "Drinks", "Ice Cream", "Candy",
+            "Cake", "Cookies", "Games", "Puzzles", "Drawing",
+            "Painting", "Singing", "Dancing", "Running", "Jumping",
+            "Swimming", "Climbing", "Magic", "Circus", "Clowns",
+            "Balloons", "Bubbles", "Rainbows", "Stars", "Moon", "Sun"
         ]
         self.word_cache = {}  # Cache for last 5 generated words per topic
 
+    def get_category(self, age: str) -> list:
+        """Get 5 random categories from available topics based on age"""
+        # For now, return 5 random categories regardless of age
+        # You can add age-specific logic here if needed
+        return random.sample(self.available_topics, 5)
+    
     def get_topic(self, topic_request: TopicRequest = None) -> InitialTopicResponse:
         # Use provided topic or randomly select one if not provided
         if topic_request and topic_request.topic:
