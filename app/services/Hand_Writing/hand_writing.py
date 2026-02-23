@@ -1,5 +1,8 @@
 import os
 import base64
+import uuid
+from datetime import datetime
+from pathlib import Path
 from openai import OpenAI
 from app.services.Hand_Writing.hand_writing_schema import HandWritingResponse
 from fastapi import UploadFile
@@ -10,6 +13,10 @@ class HandWritingChecker:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
+        
+        # Create test_images directory if it doesn't exist
+        self.test_images_dir = Path("test_images")
+        self.test_images_dir.mkdir(exist_ok=True)
         
     async def check_handwriting(self, image_file: UploadFile, word: str) -> HandWritingResponse:
         """
@@ -72,7 +79,20 @@ class HandWritingChecker:
             
             matches = result.get('matches', False)
             
-            return HandWritingResponse(correct=matches)
+            # Save image to test folder for debugging
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            unique_id = str(uuid.uuid4())[:8]
+            file_extension = Path(image_file.filename).suffix or ".jpg"
+            filename = f"handwriting_{timestamp}_{unique_id}{file_extension}"
+            filepath = self.test_images_dir / filename
+            
+            with open(filepath, "wb") as f:
+                f.write(image_data)
+            
+            # Generate accessible URL
+            image_url = f"/test_images/{filename}"
+            
+            return HandWritingResponse(correct=matches, image_url=image_url)
             
         except Exception as e:
             print(f"Error checking handwriting: {e}")
