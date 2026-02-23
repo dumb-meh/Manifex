@@ -24,7 +24,6 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 app.mount("/temp_audio", StaticFiles(directory="temp_audio"), name="temp_audio")
-app.mount("/test_images", StaticFiles(directory="test_images"), name="test_images")
 
 @app.on_event("startup")
 async def startup_event():
@@ -32,9 +31,6 @@ async def startup_event():
 
     temp_dir = Path("temp_audio")
     temp_dir.mkdir(exist_ok=True)
-    
-    test_images_dir = Path("test_images")
-    test_images_dir.mkdir(exist_ok=True)
     
     asyncio.create_task(start_cleanup_service())
 
