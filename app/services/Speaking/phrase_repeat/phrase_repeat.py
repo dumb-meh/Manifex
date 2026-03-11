@@ -12,8 +12,11 @@ class PhraseRepeat:
         self.phrase_cache = []  # Cache for last 5 generated phrases
         
     def phrase_repeat_score(self,input:PhraseRepeatRequest, transcript) -> PhraseRepeatResponse:
+        print(f"[PhraseRepeat] scoring called with phrase_list='{input.phrase}' and transcript='{transcript}'")
         prompt = self.create_prompt(input,transcript)
+        print(f"[PhraseRepeat] prompt:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[PhraseRepeat] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input:PhraseRepeatRequest, transcript) -> str:

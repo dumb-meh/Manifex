@@ -9,4 +9,5 @@ class PhraseRepeatResponse(BaseModel):
     feedback: str = "No feedback available"
     status: str = "error"
     message: str = "Evaluation failed"
+    transcript: Optional[str] = None
     

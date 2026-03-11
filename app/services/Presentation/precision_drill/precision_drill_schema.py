@@ -9,4 +9,6 @@ class PrecisionDrillResponse(BaseModel):
     feedback:str
     status:str
     message:str
+    # debug information returned to clients for troubleshooting
+    transcript: Optional[str] = None
     

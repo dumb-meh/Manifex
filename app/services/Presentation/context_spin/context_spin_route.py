@@ -34,7 +34,16 @@ async def  context_spin_score(
         request = ContextSpinRequest(scenario=scenario, words=words_list)
         
         transcript = await convert_audio_to_text(file)
+        print(f"[context_spin_route] received transcript: '{transcript['text']}' success={transcript.get('success')} message={transcript.get('message')}")
+        if not transcript['text'] or not transcript['text'].strip():
+            print("[context_spin_route] detected empty transcript, returning default low score")
+            return ContextSpinResponse(score=0, feedback="No audio detected", status="success", message="Empty transcript", transcript=transcript['text'])
         response = context_spin.context_spin_score(request,transcript['text'])
+        try:
+            response.transcript = transcript['text']
+        except Exception:
+            pass
+        print(f"[context_spin_route] evaluation response: {response}")
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

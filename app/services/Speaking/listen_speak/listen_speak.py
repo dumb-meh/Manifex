@@ -12,8 +12,11 @@ class ListenSpeak:
         self.sentence_cache = []  # Cache for last 5 generated sentences
         
     def listen_speak_score(self,input:ListenSpeakRequest, transcript) -> ListenSpeakResponse:
+        print(f"[ListenSpeak] scoring called with sentence='{input.sentence}' and transcript='{transcript}'")
         prompt = self.create_prompt(input,transcript)
+        print(f"[ListenSpeak] prompt:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[ListenSpeak] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input:ListenSpeakRequest, transcript) -> str:

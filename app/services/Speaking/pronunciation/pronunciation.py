@@ -12,8 +12,11 @@ class Pronunciation:
         self.word_cache = []  # Cache for last 5 generated pronunciation words
         
     def pronunciation_score(self,input:PronunciationRequest, transcript) -> PronunciationResponse:
+        print(f"[Pronunciation] scoring called with word='{input.word}' and transcript='{transcript}'")
         prompt = self.create_prompt(input,transcript)
+        print(f"[Pronunciation] prompt:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[Pronunciation] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input:PronunciationRequest, transcript) -> str:

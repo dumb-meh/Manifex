@@ -37,7 +37,18 @@ async def  flow_chain_score(
         request = FlowChainRequest(word_list=word_list_parsed)
         
         transcript = await convert_audio_to_text(file)
+        print(f"[flow_chain_route] received transcript: '{transcript['text']}' success={transcript.get('success')} message={transcript.get('message')}")
+        # guard against empty/whitespace transcripts
+        if not transcript['text'] or not transcript['text'].strip():
+            print("[flow_chain_route] detected empty transcript, returning default low score")
+            return FlowChainResponse(score=0, feedback="No audio detected", status="success", message="Empty transcript", transcript=transcript['text'])
         response = flow_chain.flow_chain_score(request, transcript['text'])
+        # attach debug transcript for troubleshooting
+        try:
+            response.transcript = transcript['text']
+        except Exception:
+            pass
+        print(f"[flow_chain_route] evaluation response: {response}")
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

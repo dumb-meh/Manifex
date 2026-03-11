@@ -23,7 +23,17 @@ async def  power_words_score(
         
         defintion = await convert_audio_to_text(defintion_file)
         sentence = await convert_audio_to_text(sentence_file)
+        print(f"[power_words_route] definition transcript: '{defintion['text']}', sentence transcript: '{sentence['text']}'")
+        if (not defintion['text'] or not defintion['text'].strip()) and (not sentence['text'] or not sentence['text'].strip()):
+            print("[power_words_route] detected both transcripts empty, returning default low score")
+            return PowerWordsResponse(score=0, feedback="No audio detected", status="success", message="Empty transcripts", transcript="")
         response = power_words.power_words_score(request,defintion['text'],sentence['text'])
+        try:
+            # store both pieces joined for easy debugging
+            response.transcript = f"definition:{defintion['text']}|sentence:{sentence['text']}"
+        except Exception:
+            pass
+        print(f"[power_words_route] evaluation response: {response}")
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

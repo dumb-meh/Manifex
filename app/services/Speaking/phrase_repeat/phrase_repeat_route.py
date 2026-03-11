@@ -20,8 +20,17 @@ async def phrase_repeat_score(
 
     try: 
         transcript = await convert_audio_to_text(file)
+        print(f"[phrase_repeat_route] transcript: '{transcript['text']}' success={transcript.get('success')}")
+        if not transcript['text'] or not transcript['text'].strip():
+            print("[phrase_repeat_route] empty transcript detected, returning default response")
+            return PhraseRepeatResponse(score=0, feedback="No audio detected", status="success", message="Empty transcript", transcript=transcript['text'])
         request = PhraseRepeatRequest(phrase_list=phrase)
         response = phrase_repeat.phrase_repeat_score(request, transcript['text'])
+        try:
+            response.transcript = transcript['text']
+        except Exception:
+            pass
+        print(f"[phrase_repeat_route] evaluation response: {response}")
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

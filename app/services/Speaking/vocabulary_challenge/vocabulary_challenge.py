@@ -12,8 +12,11 @@ class VocabularyChallenge:
         self.word_cache = []  # Cache for last 5 generated vocabulary words
         
     def vocabulary_score(self,input:VocabularyRequest, transcript) -> VocabularyResponse:
+        print(f"[VocabularyChallenge] scoring called with word='{input.word}' and transcript='{transcript}'")
         prompt = self.create_prompt(input,transcript)
+        print(f"[VocabularyChallenge] prompt:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[VocabularyChallenge] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input:VocabularyRequest, transcript) -> str:

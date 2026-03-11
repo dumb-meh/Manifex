@@ -12,8 +12,11 @@ class FlowChain:
         self.word_cache = []  # Cache for last 5 generated word chains
         
     def flow_chain_score(self, input: FlowChainRequest,transcript) -> FlowChainResponse:
+        print(f"[FlowChain] scoring called with transcript: '{transcript}' and word_list: {input.word_list}")
         prompt = self.create_prompt(input,transcript)
+        print(f"[FlowChain] prompt sent to OpenAI:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[FlowChain] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input: FlowChainRequest,transcript) -> str:

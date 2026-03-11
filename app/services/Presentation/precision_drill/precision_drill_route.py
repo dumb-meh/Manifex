@@ -38,7 +38,16 @@ async def  precision_drill_score(
         request = PrecisionDrillRequest(wordlist=wordlist_parsed)
         
         transcript = await convert_audio_to_text(file)
+        print(f"[precision_drill_route] received transcript: '{transcript['text']}' success={transcript.get('success')} message={transcript.get('message')}")
+        if not transcript['text'] or not transcript['text'].strip():
+            print("[precision_drill_route] detected empty transcript, returning default low score")
+            return PrecisionDrillResponse(score=0, feedback="No audio detected", status="success", message="Empty transcript", transcript=transcript['text'])
         response = precision_drill.precision_drill_score(request, transcript['text'])
+        try:
+            response.transcript = transcript['text']
+        except Exception:
+            pass
+        print(f"[precision_drill_route] evaluation response: {response}")
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

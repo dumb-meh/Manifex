@@ -12,8 +12,11 @@ class PrecisionDrill:
         self.word_cache = []  # Cache for last 5 generated precision drills
         
     def precision_drill_score(self, input: PrecisionDrillRequest, transcript: str) -> PrecisionDrillResponse:
+        print(f"[PrecisionDrill] scoring called with transcript: '{transcript}' and wordlist: {input.wordlist}")
         prompt = self.create_prompt(input, transcript)
+        print(f"[PrecisionDrill] prompt sent to OpenAI:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[PrecisionDrill] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input: PrecisionDrillRequest, transcript: str) -> str:

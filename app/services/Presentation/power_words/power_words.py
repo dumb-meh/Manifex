@@ -13,8 +13,11 @@ class PowerWords:
         self.word_cache = []  # Cache for last 5 generated power words
         
     def power_words_score(self, input: PowerWordsRequest, definition: str, sentence: str) -> PowerWordsResponse:
+        print(f"[PowerWords] scoring called with word: '{input.word}', definition transcript: '{definition}', sentence transcript: '{sentence}'")
         prompt = self.create_prompt(input, definition, sentence)
+        print(f"[PowerWords] prompt sent to OpenAI:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[PowerWords] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input: PowerWordsRequest, definition: str, sentence: str) -> str:

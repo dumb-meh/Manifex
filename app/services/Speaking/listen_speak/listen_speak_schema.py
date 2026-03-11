@@ -9,4 +9,6 @@ class ListenSpeakResponse(BaseModel):
     feedback: str = "No feedback available"
     status: str = "error"
     message: str = "Evaluation failed"
+    # captured transcript for debugging
+    transcript: Optional[str] = None
     

@@ -12,8 +12,11 @@ class ContextSpin:
         self.content_cache = []  # Cache for last 5 generated content
         
     def context_spin_score(self,input:ContextSpinRequest, transcript) -> ContextSpinResponse:
+        print(f"[ContextSpin] scoring called with transcript: '{transcript}' scenario: '{input.scenario}' words: {input.words}")
         prompt = self.create_prompt(input,transcript)
+        print(f"[ContextSpin] prompt sent to OpenAI:\n{prompt}")
         response = self.get_openai_response(prompt)
+        print(f"[ContextSpin] raw OpenAI response: {response}")
         return self.format_response(response)
     
     def create_prompt(self, input:ContextSpinRequest, transcript) -> str:

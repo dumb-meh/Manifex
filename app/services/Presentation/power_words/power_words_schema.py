@@ -8,4 +8,6 @@ class PowerWordsResponse(BaseModel):
     feedback:str
     status:str
     message:str
+    # debug transcript so frontend can see what was recognized
+    transcript: Optional[str] = None
     

@@ -10,4 +10,6 @@ class ContextSpinResponse(BaseModel):
     feedback:str
     status:str
     message:str
+    # optional field for debugging purposes
+    transcript: Optional[str] = None
     

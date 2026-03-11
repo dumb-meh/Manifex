@@ -20,8 +20,17 @@ async def pronunciation_score(
     
     try:
         transcript = await convert_audio_to_text(file)
+        print(f"[pronunciation_route] transcript: '{transcript['text']}' success={transcript.get('success')}")
+        if not transcript['text'] or not transcript['text'].strip():
+            print("[pronunciation_route] empty transcript detected, returning default response")
+            return PronunciationResponse(score=0, feedback="No audio detected", status="success", message="Empty transcript", transcript=transcript['text'])
         request = PronunciationRequest(word=word)
         response = pronunciation.pronunciation_score(request, transcript['text'])
+        try:
+            response.transcript = transcript['text']
+        except Exception:
+            pass
+        print(f"[pronunciation_route] evaluation response: {response}")
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
