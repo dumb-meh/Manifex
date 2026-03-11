@@ -29,11 +29,24 @@ async def convert_audio_to_text(audio_file: UploadFile, language: Optional[str] 
         data = await audio_file.read()
         print(f"[convert_audio_to_text] read {len(data)} bytes from '{audio_file.filename}'")
 
+        # log first few bytes so we can inspect the file header in logs
+        try:
+            import binascii
+            header = binascii.hexlify(data[:16]).decode('ascii')
+            print(f"[convert_audio_to_text] header (first 16 bytes): {header}")
+        except Exception:
+            pass
+
         # pass raw bytes (or a BytesIO) to OpenAI client; SpooledTemporaryFile
-        # was triggering a type check error in the newer SDK.
+        # was triggering a type check error in the newer SDK.  Use a tuple with
+        # filename to help the service identify the format in case bytes alone
+        # aren't sufficient.
+        from io import BytesIO
+        file_obj = BytesIO(data)
+        file_obj.name = audio_file.filename or "audio"
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
-            file=data,
+            file=(audio_file.filename or "audio", file_obj),
             language=language
         )
         text = transcript.text if hasattr(transcript, 'text') else ''

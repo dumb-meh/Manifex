@@ -22,6 +22,7 @@ class VocabularyChallenge:
     def create_prompt(self, input:VocabularyRequest, transcript) -> str:
         prompt = f"""
         You are an expert speaking practice coach.
+        **IMPORTANT:** If the transcript is blank, repetitive, or otherwise invalid, assign a score of 0 and explain that the audio did not contain a usable attempt.
         you will recive the following by:
         word: {input.word}
         user transcript: {transcript}
@@ -34,7 +35,7 @@ class VocabularyChallenge:
             "message": "Evaluation completed successfully."
 
         }}
-        
+
         """  
         return prompt
     

@@ -22,6 +22,7 @@ class ContextSpin:
     def create_prompt(self, input:ContextSpinRequest, transcript) -> str:
         prompt = f"""
         You are an expert presentation coach. Evaluate the following text based on its context relevance and vocabulary integration.
+        **IMPORTANT:** If the transcript is empty, repeats the same word, or otherwise appears to be garbage, return a score of 0 and indicate that the input was invalid.
         you will recive the following by:
         scenario: {input.scenario}
         user transcript: {transcript}

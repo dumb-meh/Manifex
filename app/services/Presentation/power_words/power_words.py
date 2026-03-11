@@ -28,6 +28,8 @@ class PowerWords:
     - Clarity: How well does the user understand and use the word?
     - Relevance: How suitable is this word for presentations?
 
+    **IMPORTANT:** If the definition or example sentence is empty, contains only repeated words, or appears to be nonsensical (e.g. “hello hello hello”), assign a score of 0 and explain that the user’s response was invalid.
+
     Details to evaluate:
     Word: {input.word}
     User's Definition: {definition}

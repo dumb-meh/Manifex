@@ -21,6 +21,7 @@ class FlowChain:
     
     def create_prompt(self, input: FlowChainRequest,transcript) -> str:
         prompt = f"""you are an expert presentation coach. Evaluate the following connected words based on their flow and relevance.
+        **IMPORTANT:** If the user's transcript is empty or simply repeats a word, give a score of 0 and note the response was invalid.
         connected words: {input.word_list}
         user pronounced words: {transcript}
         score it based on how many wors were used correctly in context on a scale of 0-100 and provide constructive feedback and suggestions for improvement.

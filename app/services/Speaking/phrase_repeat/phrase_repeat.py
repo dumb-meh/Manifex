@@ -22,6 +22,7 @@ class PhraseRepeat:
     def create_prompt(self, input:PhraseRepeatRequest, transcript) -> str:
         prompt = f"""
         You are an expert speaking coach. Evaluate the user's pronunciation based on the following criteria: clarity, fluency, intonation, and overall effectiveness in conveying the intended message.
+        **IMPORTANT:** If the transcript is empty or contains nothing but a repeated word, return a score of 0 and explain that the audio was invalid.
         you will recive the following by:
         phrase: {input.phrase}
         user transcript: {transcript}
@@ -34,7 +35,7 @@ class PhraseRepeat:
             "message": "Evaluation completed successfully."
 
         }}
-        
+
         """  
         return prompt
     

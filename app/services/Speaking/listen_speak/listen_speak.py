@@ -22,6 +22,7 @@ class ListenSpeak:
     def create_prompt(self, input:ListenSpeakRequest, transcript) -> str:
         prompt = f"""
         You are an expert speaking practice coach.
+        **IMPORTANT:** If the transcript is blank or appears to be nonsense (e.g. repeated words), score it as 0 and state that the input was invalid.
         you will recive the following by:
         senetence: {input.sentence}
         user transcript: {transcript}
@@ -34,7 +35,7 @@ class ListenSpeak:
             "message": "Evaluation completed successfully."
 
         }}
-        
+
         """  
         return prompt
     

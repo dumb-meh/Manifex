@@ -21,6 +21,7 @@ class PrecisionDrill:
     
     def create_prompt(self, input: PrecisionDrillRequest, transcript: str) -> str:
         prompt = f"""You will recieve a word list and a voice transcript of user saying those words for a precision drill. Evaluate the user's performance based on clarity, speed, and accuracy in pronouncing the words. Provide a score out of 10, constructive feedback, and suggestions for improvement in JSON format.
+        **IMPORTANT:** If the transcript is empty, contains only a repeated word, or otherwise seems invalid, give a score of 0 and note that the audio did not contain a clear pronunciation.
         You will get the following by:
         Word List: {input.wordlist}
         User Transcript: {transcript}
@@ -32,8 +33,7 @@ class PrecisionDrill:
             "status": "success",
             "message": "Evaluation completed successfully."
 
-        }}"""
-        
+        }}"""        
         return prompt
     
     def get_openai_response(self, prompt: str) -> str:
