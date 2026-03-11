@@ -22,22 +22,18 @@ async def convert_audio_to_text(audio_file: UploadFile, language: Optional[str] 
         Dictionary with text and success status
     """
     try:
-        # rewind and log file info
+        # rewind before reading
         await audio_file.seek(0)
-        try:
-            # read bytes to compute size (do not consume permanently)
-            file_obj = audio_file.file
-            current_pos = file_obj.tell()
-            file_obj.seek(0, os.SEEK_END)
-            size = file_obj.tell()
-            file_obj.seek(current_pos)
-        except Exception:
-            size = None
-        print(f"[convert_audio_to_text] received file='{audio_file.filename}' size={size} bytes")
 
+        # read all bytes from the upload; UploadFile.read() returns bytes
+        data = await audio_file.read()
+        print(f"[convert_audio_to_text] read {len(data)} bytes from '{audio_file.filename}'")
+
+        # pass raw bytes (or a BytesIO) to OpenAI client; SpooledTemporaryFile
+        # was triggering a type check error in the newer SDK.
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_file.file,
+            file=data,
             language=language
         )
         text = transcript.text if hasattr(transcript, 'text') else ''
