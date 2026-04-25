@@ -2,7 +2,7 @@ import os
 import base64
 import json
 from openai import OpenAI
-from app.services.Hand_Writing.hand_writing_schema import HandWritingResponse, HandWritingWordsResponse
+from app.services.Hand_Writing.hand_writing_schema import HandWritingResponse, HandWritingScoreResponse, HandWritingWordsResponse
 from fastapi import UploadFile
 
 
@@ -158,9 +158,10 @@ class HandWritingChecker:
 
         return HandWritingWordsResponse(words=generated_words)
 
-    async def check_handwriting_words(self, image_file: UploadFile, word: str) -> HandWritingResponse:
+    async def check_handwriting_words(self, image_file: UploadFile, word: str) -> HandWritingScoreResponse:
         """
-        Check if the handwritten text in the image matches the provided word
+        Check if the handwritten text in the image matches the provided word.
+        Returns a score based on letter-by-letter comparison (0-100).
         """
         try:
             # Read and encode the image
@@ -170,18 +171,16 @@ class HandWritingChecker:
             # Determine image format
             content_type = image_file.content_type or "image/jpeg"
             
-            # Create prompt for GPT-4 Vision
+            # Create prompt for GPT-4 Vision to extract text
             prompt = f"""
             Analyze this image and extract any handwritten text you can see.
-
-            Then compare the extracted text with this word: "{word}"
-
+            
             Respond with ONLY a JSON object in this exact format:
             {{
-                "matches": true or false
+                "extracted_text": "the text you see"
             }}
-
-            The match should be case-insensitive and ignore minor spelling variations if the intent is clear.
+            
+            If no text is visible or unreadable, set extracted_text to an empty string.
             """
             
             # Call OpenAI Vision API
@@ -215,13 +214,25 @@ class HandWritingChecker:
             result_text = result_text.strip()
             
             result = json.loads(result_text)
-
-            matches = result.get('matches', False)
-            return HandWritingResponse(correct=matches)
+            extracted_text = result.get('extracted_text', '').strip().lower()
+            target_word = word.lower()
+            
+            # Calculate score based on letter-by-letter comparison
+            if not target_word:
+                score = 100 if not extracted_text else 0
+            elif not extracted_text:
+                score = 0
+            else:
+                # Count matching characters
+                matching_chars = sum(1 for i, char in enumerate(target_word) if i < len(extracted_text) and extracted_text[i] == char)
+                score = int((matching_chars / len(target_word)) * 100)
+            
+            score = max(0, min(100, score))
+            return HandWritingScoreResponse(score=score)
             
         except Exception as e:
             print(f"Error checking handwriting: {e}")
-            return HandWritingResponse(correct=False)
+            return HandWritingScoreResponse(score=0)
             
     
 

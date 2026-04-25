@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, Query
-from .hand_writing_schema import HandWritingResponse, HandWritingWordsResponse
+from .hand_writing_schema import HandWritingResponse, HandWritingScoreResponse, HandWritingWordsResponse
 from .hand_writing import HandWritingChecker
 from app.utils.verify_auth import verify_token
 
@@ -42,7 +42,7 @@ async def get_handwriting_words(
         raise HTTPException(status_code=500, detail=str(e))    
 
 
-@router.post("/check_handwriting_words", response_model=HandWritingResponse)
+@router.post("/check_handwriting_words", response_model=HandWritingScoreResponse)
 async def check_handwriting_words(
     image: UploadFile = File(..., description="Image file containing handwritten text"),
     word: str = Form(..., description="The word to match against"),
