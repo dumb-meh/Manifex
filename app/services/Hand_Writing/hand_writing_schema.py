@@ -1,5 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class HandWritingResponse(BaseModel):
     correct: bool
+
+
+class HandWritingWordsResponse(BaseModel):
+    words: list[str]
+
+
