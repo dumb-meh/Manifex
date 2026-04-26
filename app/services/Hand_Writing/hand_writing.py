@@ -134,13 +134,6 @@ class HandWritingChecker:
         if len(generated_words) != 10:
             raise ValueError("Failed to generate exactly 10 words")
 
-        if len(set(generated_words)) != 10:
-            raise ValueError("Generated words contain duplicates")
-
-        cached_seen = set([word.lower() for batch in self.word_cache[user_id] for word in batch])
-        if any(word in cached_seen for word in generated_words):
-            raise ValueError("Generated words repeated cached words")
-
         # Validate difficulty by position: first 4 easy (3 letters), next 3 medium (4), last 3 hard (5+).
         easy_words = generated_words[:4]
         medium_words = generated_words[4:7]
