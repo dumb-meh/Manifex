@@ -20,15 +20,28 @@ class FlowChain:
         return self.format_response(response)
     
     def create_prompt(self, input: FlowChainRequest,transcript) -> str:
-        prompt = f"""you are an expert presentation coach. Evaluate the following connected words based on their flow and relevance.
-        **IMPORTANT:** If the user's transcript is empty or simply repeats a word, give a score of 0 and note the response was invalid.
-        connected words: {input.word_list}
-        user pronounced words: {transcript}
-        score it based on how many wors were used correctly in context on a scale of 0-100 and provide constructive feedback and suggestions for improvement.
-        The json response must be exactly in this format
+        prompt = f"""You are an expert presentation coach. Evaluate the following connected words based on flow, relevance, correctness, and contextual usage.
+
+        STRICT EVALUATION RULES (follow exactly):
+        1) Be very strict. Do not reward vague, generic, repetitive, or partially correct responses.
+        2) Never assume meaning that is not clearly present in the user's transcript.
+        3) If transcript is empty, mostly filler, repetitive, unrelated, or nonsensical, assign score = 0.
+        4) If most target words are missing or misused, score must be below 40.
+        5) If response is average but incomplete, score must be between 40 and 69.
+        6) Give 70-84 only when most words are used correctly with clear flow.
+        7) Give 85-100 only when usage is precise, natural, coherent, and context-rich across the chain.
+        8) Penalize grammar mistakes, word-order breakdown, forced phrasing, and off-topic content.
+        9) Keep feedback specific, short, and actionable.
+
+        Connected words: {input.word_list}
+        User pronounced words: {transcript}
+
+        Score based on how many words were used correctly in context on a scale of 0-100, and provide constructive feedback and suggestions for improvement.
+
+        The JSON response must be exactly in this format:
         {{
             "score": 86,
-            "feedback": ""
+            "feedback": "",
             "status": "success",
             "message": "Evaluation completed successfully."
 

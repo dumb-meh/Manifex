@@ -28,7 +28,16 @@ class PowerWords:
     - Clarity: How well does the user understand and use the word?
     - Relevance: How suitable is this word for presentations?
 
-    **IMPORTANT:** If the definition or example sentence is empty, contains only repeated words, or appears to be nonsensical (e.g. “hello hello hello”), assign a score of 0 and explain that the user’s response was invalid.
+    STRICT EVALUATION RULES (follow exactly):
+    1) Be very strict. Do not reward vague, generic, or partially correct responses.
+    2) Never assume meaning that is not clearly stated by the user.
+    3) If definition OR sentence is empty, mostly filler, repetitive, unrelated, or nonsensical (e.g., "hello hello hello"), assign score = 0.
+    4) If the definition is weak/inaccurate OR the sentence does not correctly use the word, score must be below 40.
+    5) If response is average but incomplete, score must stay between 40 and 69.
+    6) Give 70-84 only when both definition and sentence are clearly correct and relevant.
+    7) Give 85-100 only for precise, natural, context-rich responses showing strong understanding.
+    8) Penalize grammar mistakes, misuse of the word, and off-topic content.
+    9) Keep feedback specific, short, and actionable.
 
     Details to evaluate:
     Word: {input.word}
