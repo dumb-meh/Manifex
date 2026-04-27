@@ -20,12 +20,31 @@ class WordFlash:
     def create_prompt(self, input:WordFlashRequest, transcript) -> str:
         prompt = f"""
         You are an expert speaking practice coach.
-        you will receive the following:
+        You will receive the following:
         word: {input.word}
         user transcript: {transcript}
-        score each aspect on a scale of 1-100 and provide constructive feedback and suggestions for improvement.
-        Make the feedback concise and vary the phrasing across requests to avoid repetition
-        The json response must be exactly in this format
+
+        CRITICAL: IMMEDIATE REJECTION RULES - CHECK THESE FIRST BEFORE SCORING:
+        - If transcript is empty, whitespace, silence-like, or missing, RETURN score = 0 immediately.
+        - This is a single-word speaking task, so one word is expected.
+        - If the spoken word does not match or clearly attempt the target word, RETURN score = 0 immediately.
+        - If transcript is filler/repetitive/nonsensical/unrelated to the target word, RETURN score = 0 immediately.
+        - If transcript is just a random common word (e.g., "you", "hello", "test") and not the target, RETURN score = 0 immediately.
+
+        STRICT SCORING RULES (apply only if not rejected above):
+        1) Be very strict. Never reward vague, partial, or generic responses.
+        2) Never assume meaning that is not clearly present in the transcript.
+        3) Evaluate pronunciation accuracy, clarity, and confidence of the target word.
+        4) If pronunciation is weak/unclear or only partly correct, score must be below 40.
+        5) If pronunciation is understandable but not clean, score must stay between 40 and 69.
+        6) Give 70-84 only when pronunciation is clear and mostly accurate.
+        7) Give 85-100 only for highly accurate, clear, and confident pronunciation.
+        8) Penalize mispronunciation, hesitation, and non-target word usage.
+
+        Provide constructive feedback and suggestions for improvement.
+        Keep feedback concise and vary the phrasing across requests to avoid repetition.
+
+        The JSON response must be exactly in this format:
         {{
             "score": 8,
             "feedback": "Great pronunciation; try to improve clarity",

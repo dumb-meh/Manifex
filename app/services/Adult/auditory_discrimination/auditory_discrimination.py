@@ -11,10 +11,16 @@ class AuditoryDiscrimination:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
-        self.word_cache = []  # Store last 5 word pairs
+        self.word_cache = []  # Store last 10 word pairs
+        self.user_request_counts = {}  # Track per-user request counts for every-10-requests logic
         
-    async def get_auditory_discrimination(self) -> AuditoryDiscriminationResponse:
-        prompt = self.create_prompt()
+    async def get_auditory_discrimination(self, user_id: str) -> AuditoryDiscriminationResponse:
+        # Track per-user request count
+        if user_id not in self.user_request_counts:
+            self.user_request_counts[user_id] = 0
+        self.user_request_counts[user_id] += 1
+        is_tenth_request = (self.user_request_counts[user_id] % 10) == 0
+        prompt = self.create_prompt(is_tenth_request=is_tenth_request)
         response = self.get_openai_response(prompt)
         
         print(f"Raw OpenAI response: {response}")
@@ -49,10 +55,10 @@ class AuditoryDiscrimination:
                 print("Warning: Empty word_pairs detected")
                 return {"word_pairs": []}
             
-            # Update cache with new response (keep last 5 responses)
+            # Update cache with new response (keep last 10 responses)
             response_pairs = [(pair["word1"], pair["word2"]) for pair in word_pairs]
             self.word_cache.append(response_pairs)  # Store complete response
-            self.word_cache = self.word_cache[-5:]  # Keep only last 5 responses
+            self.word_cache = self.word_cache[-10:]  # Keep only last 10 responses
             
             # Generate audio using the original optimized method
             enriched_word_pairs = await self.generate_optimized_audio(word_pairs)
@@ -173,7 +179,7 @@ class AuditoryDiscrimination:
         return enriched_word_pairs
         
     
-    def create_prompt(self) -> str:
+    def create_prompt(self, is_tenth_request: bool = False) -> str:
         # Create exclusion list from cache (flatten all previous responses)
         excluded_words = "ship/sheep, pen/pin, cat/cut, bear/beer, thick/sick, bat/pat, sing/ring, make/rake"
         if self.word_cache:
@@ -182,13 +188,20 @@ class AuditoryDiscrimination:
             cache_words = [f"{pair[0]}/{pair[1]}" for pair in cached_pairs]
             excluded_words += ", " + ", ".join(cache_words)
         
+        similar_requirement = (
+            "Generate EXACTLY 3 word pairs where the answer is 'same' (identical or near-identical words). "
+            "The remaining 2 word pairs should have the answer 'different'." if is_tenth_request
+            else "Generate AT LEAST 1 word pair where the answer is 'same' (identical or near-identical words). "
+                 "Up to 3 word pairs can be 'same', and the rest should be 'different'."
+        )
+        
         prompt = f"""
         You are an expert language learning specialist creating auditory discrimination exercises. Generate high-quality word pairs for pronunciation practice.
         
         Requirements:
         - Generate exactly 5 word pairs
-        - Mix identical pairs (same word twice) with similar-sounding but different pairs
-        - Focus on minimal pairs that differ by one sound
+        - {similar_requirement}
+        - For different pairs, use minimal pairs that differ by one sound
         - Use meaningful, common English words (NOT function words like "to", "a", "the")
         - Use words that are at least 3 letters long
         - Avoid proper nouns, abbreviations, or uncommon words

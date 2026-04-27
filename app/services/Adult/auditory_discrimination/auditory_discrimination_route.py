@@ -19,7 +19,7 @@ async def get_auditory_discrimination(
         raise HTTPException(status_code=401, detail="Invalid auth token")
     
     try:
-        response = await auditory_discrimination.get_auditory_discrimination()
+        response = await auditory_discrimination.get_auditory_discrimination(user_id=user_id)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
