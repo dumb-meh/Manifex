@@ -23,21 +23,21 @@ class PowerWords:
     def create_prompt(self, input: PowerWordsRequest, definition: str, sentence: str) -> str:
         prompt = f"""You are an expert presentation coach. Evaluate the following word based on its impact, clarity, and relevance in presentations.
 
-    Scoring Criteria (0-100):
-    - Impact: How powerful and memorable is this word?
-    - Clarity: How well does the user understand and use the word?
-    - Relevance: How suitable is this word for presentations?
+    ⚠️ CRITICAL: IMMEDIATE REJECTION RULES - CHECK THESE FIRST BEFORE SCORING:
+    - If definition is empty, single word (like "You", "yes", "no"), or less than 5 words total, RETURN SCORE = 0 IMMEDIATELY.
+    - If sentence is empty or missing, RETURN SCORE = 0 IMMEDIATELY.
+    - If definition and sentence combined total fewer than 10 meaningful words, RETURN SCORE = 0 IMMEDIATELY.
+    - Single-word responses (e.g., "You", "hello", "word") are ALWAYS 0 — no exceptions.
+    - Responses containing only pronouns or articles (e.g., "you", "the", "a") are ALWAYS 0 — no exceptions.
 
-    STRICT EVALUATION RULES (follow exactly):
-    1) Be very strict. Do not reward vague, generic, or partially correct responses.
-    2) Never assume meaning that is not clearly stated by the user.
-    3) If definition OR sentence is empty, mostly filler, repetitive, unrelated, or nonsensical (e.g., "hello hello hello"), assign score = 0.
-    4) If the definition is weak/inaccurate OR the sentence does not correctly use the word, score must be below 40.
-    5) If response is average but incomplete, score must stay between 40 and 69.
-    6) Give 70-84 only when both definition and sentence are clearly correct and relevant.
-    7) Give 85-100 only for precise, natural, context-rich responses showing strong understanding.
-    8) Penalize grammar mistakes, misuse of the word, and off-topic content.
-    9) Keep feedback specific, short, and actionable.
+    STRICT SCORING RULES (apply ONLY if not rejected above):
+    1) Be very harsh. Never reward vague, incomplete, generic, or partially correct responses.
+    2) Never assume meaning that is not explicitly and clearly stated by the user.
+    3) If the definition is weak/vague OR the sentence fails to use the word correctly, score must be below 40.
+    4) If response is average but has some gaps, score must be between 40-69.
+    5) Give 70-84 only when both definition and sentence are clear, accurate, and relevant.
+    6) Give 85-100 only for precise, natural, context-rich responses that clearly demonstrate mastery.
+    7) Always penalize grammar errors, word misuse, incoherence, and off-topic content.
 
     Details to evaluate:
     Word: {input.word}

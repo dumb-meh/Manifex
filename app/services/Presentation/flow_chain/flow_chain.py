@@ -22,16 +22,20 @@ class FlowChain:
     def create_prompt(self, input: FlowChainRequest,transcript) -> str:
         prompt = f"""You are an expert presentation coach. Evaluate the following connected words based on flow, relevance, correctness, and contextual usage.
 
-        STRICT EVALUATION RULES (follow exactly):
-        1) Be very strict. Do not reward vague, generic, repetitive, or partially correct responses.
-        2) Never assume meaning that is not clearly present in the user's transcript.
-        3) If transcript is empty, mostly filler, repetitive, unrelated, or nonsensical, assign score = 0.
-        4) If most target words are missing or misused, score must be below 40.
-        5) If response is average but incomplete, score must be between 40 and 69.
-        6) Give 70-84 only when most words are used correctly with clear flow.
-        7) Give 85-100 only when usage is precise, natural, coherent, and context-rich across the chain.
-        8) Penalize grammar mistakes, word-order breakdown, forced phrasing, and off-topic content.
-        9) Keep feedback specific, short, and actionable.
+        ⚠️ CRITICAL: IMMEDIATE REJECTION RULES - CHECK THESE FIRST BEFORE SCORING:
+        - If transcript is empty, single word, or less than 5 words total, RETURN SCORE = 0 IMMEDIATELY.
+        - If transcript contains only pronouns or articles (e.g., "you", "the", "a"), RETURN SCORE = 0 IMMEDIATELY.
+        - If fewer than 3 of the target words appear in the transcript, RETURN SCORE = 0 IMMEDIATELY.
+        - Single-word or one-two word responses are ALWAYS 0 — no exceptions.
+
+        STRICT SCORING RULES (apply ONLY if not rejected above):
+        1) Be extremely harsh. Never reward vague, incomplete, generic, or partially correct responses.
+        2) Never assume meaning that is not explicitly present in the user's transcript.
+        3) If most target words are missing or misused, score must be below 40.
+        4) If response is average but incomplete, score must be between 40-69.
+        5) Give 70-84 only when most words are used correctly with clear, logical flow.
+        6) Give 85-100 only when usage is precise, natural, coherent, and demonstrates strong mastery across the chain.
+        7) Always penalize grammar errors, word-order breakdown, forced phrasing, and off-topic content.
 
         Connected words: {input.word_list}
         User pronounced words: {transcript}
