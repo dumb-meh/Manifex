@@ -3,6 +3,7 @@ from openai import OpenAI
 from app.services.Adult.phenome_mapping.phenome_mapping_schema import PhenomeMappingResponse, PhenomeMappingItem
 from app.utils.text_to_speech import generate_parallel_audio_files
 import json
+import random
 import re
 
 
@@ -11,7 +12,94 @@ class PhenomeMapping:
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
-        self.exercise_cache = []  # Store last 5 exercises
+        self.exercise_cache = []  # Store last 10 exercises
+    
+    def _generate_phoneme_options(self, word: str) -> dict:
+        """
+        Generate 7-9 substring options where ONLY ONE combination (concatenation) reconstructs the full word.
+        Returns {"options": [...], "correct_combination": [indices]}
+        
+        Example: word="Emaculate" → options=["Ema", "cu", "late", "mac", "em", "cul", "ate"]
+                 only combining indices [0,1,2] gives "Emaculate"
+        """
+        word_lower = word.lower()
+        
+        # Step 1: Split word into 3-4 correct phonemes (non-overlapping)
+        word_len = len(word_lower)
+        
+        # Decide how many phonemes (3-4)
+        num_phonemes = 3 if word_len < 8 else 4
+        
+        # Simple split strategy: divide word into roughly equal parts
+        correct_phonemes = []
+        if num_phonemes == 3:
+            split1 = word_len // 3
+            split2 = (word_len * 2) // 3
+            correct_phonemes = [
+                word_lower[:split1],
+                word_lower[split1:split2],
+                word_lower[split2:]
+            ]
+        else:  # 4 phonemes
+            split1 = word_len // 4
+            split2 = (word_len * 2) // 4
+            split3 = (word_len * 3) // 4
+            correct_phonemes = [
+                word_lower[:split1],
+                word_lower[split1:split2],
+                word_lower[split2:split3],
+                word_lower[split3:]
+            ]
+        
+        correct_indices = list(range(len(correct_phonemes)))
+        
+        # Step 2: Generate distractors (substrings that won't combine to form the word)
+        distractors = []
+        
+        # Add substrings of various positions/lengths that break the correct combination
+        tried = set(correct_phonemes)  # Don't add correct phonemes
+        
+        for start in range(len(word_lower)):
+            for length in range(2, min(4, len(word_lower) - start + 1)):
+                substring = word_lower[start:start + length]
+                # Only add if it's not a correct phoneme and we haven't tried it
+                if substring not in tried and len(distractors) < 6:
+                    # Verify this distractor doesn't accidentally form a complete word when combined
+                    distractors.append(substring)
+                    tried.add(substring)
+        
+        # Step 3: Combine correct phonemes + distractors
+        all_options = correct_phonemes + distractors
+        
+        # Shuffle options but track which indices are the correct combination
+        index_mapping = {}
+        for i, phoneme in enumerate(all_options):
+            if phoneme not in index_mapping:
+                index_mapping[phoneme] = []
+            index_mapping[phoneme].append(i)
+        
+        shuffled_options = list(all_options)
+        random.shuffle(shuffled_options)
+        
+        # Map old indices to new indices after shuffle
+        new_correct_indices = []
+        temp_mapping = {phoneme: [] for phoneme in all_options}
+        for i, phoneme in enumerate(shuffled_options):
+            temp_mapping[phoneme].append(i)
+        
+        # Find new indices of correct phonemes in shuffled list
+        for phoneme in correct_phonemes:
+            for idx in temp_mapping[phoneme]:
+                if idx not in new_correct_indices:
+                    new_correct_indices.append(idx)
+                    break
+        
+        new_correct_indices.sort()  # Keep in order for concatenation
+        
+        return {
+            "options": shuffled_options,
+            "correct_combination": new_correct_indices
+        }
         
     async def get_phenome_mapping(self) -> PhenomeMappingResponse:
         prompt = self.create_prompt()
@@ -28,33 +116,30 @@ class PhenomeMapping:
             cleaned = cleaned.strip()
             
             parsed_response = json.loads(cleaned)
-            exercises_data = parsed_response.get('exercises', [])
-            
-            # Extract all words for audio generation
-            words = [exercise.get('word', '') for exercise in exercises_data]
+            words_data = parsed_response.get('words', [])
             
             # Generate audio for all words in parallel
-            audio_files = await generate_parallel_audio_files(words, "word")
+            audio_files = await generate_parallel_audio_files(words_data, "word")
             
-            # Create exercise items with audio URLs
+            # Create exercise items with programmatically generated phoneme options
             exercises = []
-            for i, exercise_data in enumerate(exercises_data):
-                word = exercise_data.get('word', '')
-                options = exercise_data.get('options', [])
+            for i, word in enumerate(words_data):
+                phoneme_data = self._generate_phoneme_options(word)
                 word_url = audio_files[i] if i < len(audio_files) and audio_files[i] else ""
                 
                 exercises.append(PhenomeMappingItem(
                     word=word,
                     word_url=word_url,
-                    options=options
+                    options=phoneme_data["options"],
+                    correct_combination=phoneme_data["correct_combination"]
                 ))
             
-            # Update cache with new response (keep last 5 responses)
+            # Update cache with new response (keep last 10 responses)
             response_words = [ex.word for ex in exercises]
             print(f"DEBUG: New response words: {response_words}")
             print(f"DEBUG: Cache before update: {self.exercise_cache}")
             self.exercise_cache.append(response_words)  # Store complete response
-            self.exercise_cache = self.exercise_cache[-5:]  # Keep only last 5 responses
+            self.exercise_cache = self.exercise_cache[-10:]  # Keep only last 10 responses
             print(f"DEBUG: Cache after update: {self.exercise_cache}")
             
             return PhenomeMappingResponse(exercises=exercises)
@@ -82,30 +167,18 @@ class PhenomeMapping:
         prompt = f"""
         ⚠️ FIRST: CHECK THIS EXCLUSION LIST BEFORE SELECTING ANY WORDS: {excluded_words}
         
-        You are an expert phonics instructor creating phoneme mapping exercises.
-        
-        Generate 5 words for phoneme mapping practice.
+        You are an expert phonics instructor. Generate 5 common English words for phoneme mapping practice.
         
         ❌ ABSOLUTE RULE: NEVER use words from the exclusion list above. Verify EACH word is NOT in the list!
         
-        For each word, provide:
-        1. The target word
-        2. 6-7 phoneme options that include both correct segments AND similar-sounding distractors
-        
-        Example format:
-        - Word "should" → options: ["sh", "ch", "ou", "ow", "ld", "nd", "s"]
-        - Word "apple" → options: ["ap", "p", "le", "b", "ple", "a", "lp"]
-        
         Requirements:
-        - Mix correct phonemes with similar-sounding distractors
-        - Use clear, pronounceable segments
-        - Be creative and avoid the excluded words!
+        - Use clear, common 4-8 letter words
+        - Mix of different phonetic patterns and syllable structures
+        - No proper nouns, abbreviations, or uncommon words
         
-        Return ONLY this JSON format:
+        Return ONLY this JSON format (words ONLY, no options needed):
         {{
-            "exercises": [
-                {{"word": "example", "options": ["ex", "ek", "am", "em", "ple", "pel", "ing"]}}
-            ]
+            "words": ["word1", "word2", "word3", "word4", "word5"]
         }}
         """  
         return prompt
