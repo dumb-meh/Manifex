@@ -5,9 +5,9 @@ class HistoryItem(BaseModel):
     message: str
     response: str
 
-class ChatbotMessageRequest:
-    user_id:str
+class ChatbotMessageRequest(BaseModel):
+    user_id: str
     user_message: str
 
-class ChatbotMessageResponse:
+class ChatbotMessageResponse(BaseModel):
     chatbot_reply: str

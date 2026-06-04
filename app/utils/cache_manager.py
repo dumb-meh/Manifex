@@ -2,7 +2,7 @@ import redis
 import json
 from typing import List, Optional
 from app.core.config import settings
-from app.services.chat.chatbot_schema import HistoryItem
+from app.services.Chatbot.chatbot_schema import HistoryItem
 
 class SessionCacheManager:
     def __init__(self):
@@ -17,6 +17,10 @@ class SessionCacheManager:
     def _get_cache_key(self, user_id: str) -> str:
         """Generate cache key for user session"""
         return f"chat_session:{user_id}"
+
+    def _get_response_cache_key(self, signature: str) -> str:
+        """Generate cache key for a cached chatbot response"""
+        return f"chat_response:{signature}"
     
     def get_history(self, user_id: str) -> Optional[List[HistoryItem]]:
         """Retrieve conversation history for a user"""
@@ -74,6 +78,33 @@ class SessionCacheManager:
             self.redis_client.delete(cache_key)
         except Exception as e:
             print(f"Error clearing cache for user {user_id}: {e}")
+
+    def get_cached_response(self, signature: str) -> Optional[str]:
+        """Retrieve a cached response for identical prompts"""
+        if not self.redis_client or not signature:
+            return None
+
+        try:
+            cache_key = self._get_response_cache_key(signature)
+            cached_data = self.redis_client.get(cache_key)
+            if cached_data:
+                return cached_data.decode("utf-8")
+            return None
+        except Exception as e:
+            print(f"Error retrieving cached response: {e}")
+            return None
+
+    def set_cached_response(self, signature: str, response: str) -> None:
+        """Store a cached response for identical prompts"""
+        if not self.redis_client or not signature:
+            return
+
+        try:
+            cache_key = self._get_response_cache_key(signature)
+            ttl_seconds = settings.RESPONSE_CACHE_TTL_HOURS * 3600
+            self.redis_client.setex(cache_key, ttl_seconds, response)
+        except Exception as e:
+            print(f"Error storing cached response: {e}")
 
 # Global cache manager instance
 cache_manager = SessionCacheManager()

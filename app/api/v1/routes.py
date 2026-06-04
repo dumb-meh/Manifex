@@ -20,6 +20,7 @@ from app.services.Adult.phrase_maker.phrase_maker_route import router as phrase_
 from app.services.Adult.auditory_discrimination.auditory_discrimination_route import router as auditory_discrimination_router
 from app.services.Adult.phenome_mapping.phenome_mapping_route import router as phenome_mapping_router
 from app.services.Hand_Writing.hand_writing_route import router as hand_writing_router
+from app.services.Chatbot.chatbot_route import router as chatbot_router
 
 api_router = APIRouter()
 
@@ -48,3 +49,4 @@ api_router.include_router(auditory_discrimination_router, prefix="/adult/auditor
 api_router.include_router(phenome_mapping_router, prefix="/adult/phenome-mapping", tags=["adult"])
 
 api_router.include_router(hand_writing_router, prefix="/handwriting", tags=["handwriting"])
+api_router.include_router(chatbot_router, prefix="/chatbot", tags=["chatbot"])
