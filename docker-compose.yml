@@ -1,11 +1,36 @@
 services:
-  manifex-ai:
+  app:
     build: .
+    container_name: manifex_ai_app
     ports:
       - "8061:8061"
+    env_file:
+      - .env
     volumes:
       - .:/app
       - ./temp_audio:/app/temp_audio
-    environment:
-      - PYTHONPATH=/app
     restart: unless-stopped
+    networks:
+      - manifex_network
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8061/docs')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: manifex_ai_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - manifex_network
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+networks:
+  manifex_network:
+    driver: bridge
