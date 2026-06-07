@@ -21,7 +21,7 @@ async def chatbot_web_message(
     request: ChatbotMessageRequest,
     authtoken: str = Header(...)
 ):
-    if authtoken != "guest":
+    if not authtoken.startswith("temp-"):
         _verify_auth_token(authtoken)
 
     try:

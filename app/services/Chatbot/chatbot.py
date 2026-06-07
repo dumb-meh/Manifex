@@ -22,6 +22,7 @@ class ChatbotService:
         system_prompt = self.create_prompt(normalized_surface)
 
         scoped_user_id = self._scoped_user_id(user_id, normalized_surface)
+        is_temporary_user = self._is_temporary_user(user_id)
         history = cache_manager.get_history(scoped_user_id) if scoped_user_id else None
         history = history or []
         use_response_cache = len(history) == 0
@@ -47,7 +48,13 @@ class ChatbotService:
         reply = completion.choices[0].message.content.strip()
 
         if scoped_user_id:
-            cache_manager.update_history(scoped_user_id, cleaned_message, reply, existing_history=history)
+            cache_manager.update_history(
+                scoped_user_id,
+                cleaned_message,
+                reply,
+                existing_history=history,
+                ttl_hours=72 if is_temporary_user else None,
+            )
 
         if use_response_cache and cache_key:
             cache_manager.set_cached_response(cache_key, reply)
@@ -59,6 +66,9 @@ class ChatbotService:
             return ""
 
         return f"{surface}:{user_id}"
+
+    def _is_temporary_user(self, user_id: str) -> bool:
+        return bool(user_id) and user_id.startswith("temp-")
 
     def _response_cache_key(self, user_message: str, surface: str) -> str:
         signature = f"{self.prompt_version}|{surface}|{user_message}"

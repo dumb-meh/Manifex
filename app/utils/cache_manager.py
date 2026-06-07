@@ -40,7 +40,14 @@ class SessionCacheManager:
             print(f"Error retrieving cache for user {user_id}: {e}")
             return None
     
-    def update_history(self, user_id: str, new_message: str, new_response: str, existing_history: Optional[List[HistoryItem]] = None):
+    def update_history(
+        self,
+        user_id: str,
+        new_message: str,
+        new_response: str,
+        existing_history: Optional[List[HistoryItem]] = None,
+        ttl_hours: Optional[int] = None,
+    ):
         """Update conversation history for a user"""
         if not self.redis_client or not user_id:
             return
@@ -61,7 +68,8 @@ class SessionCacheManager:
             # Save to cache with TTL
             cache_key = self._get_cache_key(user_id)
             history_data = [item.dict() for item in history]
-            ttl_seconds = settings.CACHE_TTL_HOURS * 3600  # Convert hours to seconds
+            effective_ttl_hours = ttl_hours if ttl_hours is not None else settings.CACHE_TTL_HOURS
+            ttl_seconds = effective_ttl_hours * 3600  # Convert hours to seconds
             
             self.redis_client.setex(cache_key, ttl_seconds, json.dumps(history_data))
             
