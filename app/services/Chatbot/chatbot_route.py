@@ -21,11 +21,11 @@ async def chatbot_web_message(
     request: ChatbotMessageRequest,
     authtoken: str = Header(...)
 ):
-    if not authtoken.startswith("temp-"):
+    if authtoken != "guest":
         _verify_auth_token(authtoken)
 
     try:
-        response = chatbot_service.get_response(request.user_id, request.user_message, "web")
+        response = chatbot_service.get_response(user_id, request.user_message, "web")
         return ChatbotMessageResponse(chatbot_reply=response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
