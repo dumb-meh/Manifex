@@ -162,6 +162,13 @@ Once the server is running, visit:
 
 ## 🎯 Available Services
 
+### 🤖 Chatbot Services
+
+| Service | Endpoint | Description |
+|---------|----------|-------------|
+| Mercury Web Assistant | `/api/v1/chatbot/web` | Manifex website support and navigation help |
+| Mercury App Assistant | `/api/v1/chatbot/app` | Manifex app support and in-app feature guidance |
+
 ### 📖 Reading Services
 
 | Service | Endpoint | Description |
