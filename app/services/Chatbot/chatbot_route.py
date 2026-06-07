@@ -24,6 +24,7 @@ async def chatbot_web_message(
     if authtoken != "guest":
         _verify_auth_token(authtoken)
 
+    user_id = request.user_id
     try:
         response = chatbot_service.get_response(user_id, request.user_message, "web")
         return ChatbotMessageResponse(chatbot_reply=response)
